@@ -75,29 +75,29 @@ static const ThemeColors s_themes[7] = {
     .info1_border=0b11001111,.info2_border=0b11110011,
     .txt_time=0b11111111,.txt_leg=0b11001111,.txt_time_shadow=0
   },
-  { /* 1: Beach — ocean blue sky, warm sandy road, coral accents */
-    .sky={0b11000011,0b11001011,0b11001111,0b11001110,0b11111001,0b11111000,0b11111000},
-    .road=0b11111001,.grid_v=0b11001111,.grid_h1=0b11111111,.grid_h2=0b11110101,
+  { /* 1: Beach — ocean blue sky, warm sandy road, umbrellas */
+    .sky={0b11000011,0b11000111,0b11001111,0b11001110,0b11111001,0b11111000,0b11111000},
+    .road=0b11111001,.grid_v=0b11000101,.grid_h1=0b11000101,.grid_h2=0b11000101,
     .horizon=0b11111000,.sun_fill=0b11111100,.sun_line=0b11111000,
-    .landmark1=0b11100100,.landmark2=0b11001100,           // palms: tan trunk, green leaves
+    .landmark1=0b11110000,.landmark2=0b11111111,           // umbrellas: red stripe, white stripe
     .bar_ovr=0b11001111,.bar_ovr_glow=0b11001011,
     .bar_day=0b11110101,.bar_day_glow=0b11111000,
-    .bar_bg=0b11000101,.txt_ovr=0b11111111,.txt_day=0b11001111, // white+cyan on dark bar_bg
+    .bar_bg=0b11000101,.txt_ovr=0b11111111,.txt_day=0b11001111,
     .info1_bg=0b11000101,.info2_bg=0b11000111,
     .info1_border=0b11001111,.info2_border=0b11110101,
-    .txt_time=0b11000000,.txt_leg=0b11111111,.txt_time_shadow=0  // black time on bright sky
+    .txt_time=0b11000000,.txt_leg=0b11111111,.txt_time_shadow=0
   },
-  { /* 2: Mountain — dark purple/indigo sky, gray road, gold sunrise */
-    .sky={0b11000001,0b11010010,0b11100111,0b11110111,0b11111001,0b11111000,0b11111000},
+  { /* 2: Mountain — dark purple/indigo sky, deep orange sunrise, stone peaks */
+    .sky={0b11000001,0b11010010,0b11100111,0b11110011,0b11110000,0b11100100,0b11100100},
     .road=0b11010101,.grid_v=0b11111111,.grid_h1=0b11111111,.grid_h2=0b11101010,
-    .horizon=0b11111000,.sun_fill=0b11111000,.sun_line=0b11100000,
+    .horizon=0b11100100,.sun_fill=0b11110000,.sun_line=0b11100000,
     .landmark1=0b11101010,.landmark2=0b11111111,           // peaks: gray rock, white snowcap
     .bar_ovr=0b11111000,.bar_ovr_glow=0b11111001,
     .bar_day=0b11001100,.bar_day_glow=0b11001010,
     .bar_bg=0b11010101,.txt_ovr=0b11111000,.txt_day=0b11001110,
     .info1_bg=0b11010101,.info2_bg=0b11000100,
     .info1_border=0b11111000,.info2_border=0b11001100,
-    .txt_time=0b11111111,.txt_leg=0b11111111,.txt_time_shadow=0  // white on dark purple sky
+    .txt_time=0b11111111,.txt_leg=0b11111110,.txt_time_shadow=0  // white clock; pale gold leg
   },
   { /* 3: Winter — icy blue-to-white sky, gray road, evergreen trees */
     .sky={0b11000001,0b11000010,0b11000111,0b11010111,0b11101010,0b11111110,0b11111111},
@@ -111,41 +111,41 @@ static const ThemeColors s_themes[7] = {
     .info1_border=0b11001111,.info2_border=0b11010111,
     .txt_time=0b11111111,.txt_leg=0b11001111,.txt_time_shadow=0b11000000  // white+black outline
   },
-  { /* 4: City — very dark sky with amber glow, skyscrapers */
-    .sky={0b11000000,0b11010000,0b11100001,0b11100100,0b11110100,0b11111000,0b11111001},
-    .road=0b11010101,.grid_v=0b11111000,.grid_h1=0b11111000,.grid_h2=0b11110100,
-    .horizon=0b11111001,.sun_fill=0b11111001,.sun_line=0b11100000,
+  { /* 4: City — very dark sky, deep orange glow, skyscrapers */
+    .sky={0b11000000,0b11010000,0b11100001,0b11100100,0b11110100,0b11110100,0b11110100},
+    .road=0b11010000,.grid_v=0b11111000,.grid_h1=0b11111000,.grid_h2=0b11110100,
+    .horizon=0b11110100,.sun_fill=0b11110100,.sun_line=0b11100000,
     .landmark1=0b11010101,.landmark2=0b11111000,           // buildings: gray silhouette, yellow lit windows
     .bar_ovr=0b11111000,.bar_ovr_glow=0b11111001,
     .bar_day=0b11110100,.bar_day_glow=0b11111000,
     .bar_bg=0b11000000,.txt_ovr=0b11111000,.txt_day=0b11110100,
-    .info1_bg=0b11000000,.info2_bg=0b11010101,
+    .info1_bg=0b11000000,.info2_bg=0b11000000,
     .info1_border=0b11111000,.info2_border=0b11110100,
-    .txt_time=0b11111111,.txt_leg=0b11111000,.txt_time_shadow=0  // white on very dark sky
+    .txt_time=0b11111111,.txt_leg=0b11111000,.txt_time_shadow=0
   },
-  { /* 5: Plains — big blue sky, brass road, wildflowers */
-    .sky={0b11000011,0b11001011,0b11001111,0b11011011,0b11111111,0b11111101,0b11111000},
-    .road=0b11101001,.grid_v=0b11111100,.grid_h1=0b11111100,.grid_h2=0b11101000,
-    .horizon=0b11111000,.sun_fill=0b11111100,.sun_line=0b11111000,
-    .landmark1=0b11001000,.landmark2=0b11111100,           // flowers: green stems, yellow blooms
-    .bar_ovr=0b11111111,.bar_ovr_glow=0b11111000,          // white bar on dark navy bar_bg
+  { /* 5: Plains — blue sky, green meadow road, wildflowers */
+    .sky={0b11000011,0b11000111,0b11001111,0b11011011,0b11111111,0b11111101,0b11111000},
+    .road=0b11001001,.grid_v=0b11000001,.grid_h1=0b11000001,.grid_h2=0b11010000,
+    .horizon=0b11001000,.sun_fill=0b11111100,.sun_line=0b11111000,
+    .landmark1=0b11010000,.landmark2=0b11111100,           // flowers: dark stems, yellow blooms
+    .bar_ovr=0b11111111,.bar_ovr_glow=0b11111000,
     .bar_day=0b11001111,.bar_day_glow=0b11101000,
-    .bar_bg=0b11000001,.txt_ovr=0b11111111,.txt_day=0b11001111, // white+cyan on dark navy bg
+    .bar_bg=0b11000001,.txt_ovr=0b11111111,.txt_day=0b11001111,
     .info1_bg=0b11000001,.info2_bg=0b11000001,
     .info1_border=0b11111100,.info2_border=0b11001100,
-    .txt_time=0b11000001,.txt_leg=0b11111111,.txt_time_shadow=0  // oxford blue on bright sky
+    .txt_time=0b11000001,.txt_leg=0b11111111,.txt_time_shadow=0
   },
-  { /* 6: Desert — hot cerulean/pastel sky, sandy road, cacti */
+  { /* 6: Desert — hot cerulean/pastel sky, sandy road, saguaro cacti */
     .sky={0b11001011,0b11001110,0b11111110,0b11111110,0b11111001,0b11111000,0b11110100},
-    .road=0b11111001,.grid_v=0b11110100,.grid_h1=0b11111000,.grid_h2=0b11100100,
+    .road=0b11111001,.grid_v=0b11100000,.grid_h1=0b11100000,.grid_h2=0b11100000,
     .horizon=0b11110100,.sun_fill=0b11111111,.sun_line=0b11111000,
-    .landmark1=0b11100100,.landmark2=0b11001000,           // cacti: tan body, army green accents
+    .landmark1=0b11000100,.landmark2=0b11001000,           // cacti: dark green body, medium green
     .bar_ovr=0b11110100,.bar_ovr_glow=0b11111000,
     .bar_day=0b11101000,.bar_day_glow=0b11001100,
-    .bar_bg=0b11010000,.txt_ovr=0b11111111,.txt_day=0b11001111, // white+cyan on dark red bar_bg
+    .bar_bg=0b11010000,.txt_ovr=0b11111111,.txt_day=0b11001111,
     .info1_bg=0b11010000,.info2_bg=0b11010000,
     .info1_border=0b11110100,.info2_border=0b11111000,
-    .txt_time=0b11000001,.txt_leg=0b11111111,.txt_time_shadow=0  // oxford blue on bright sandy sky
+    .txt_time=0b11000001,.txt_leg=0b11000001,.txt_time_shadow=0  // oxford blue on bright sky
   }
 };
 
@@ -391,11 +391,12 @@ static void draw_evergreens(GContext *ctx, const ThemeColors *tc) {
 
 // City skyscrapers with lit windows
 static void draw_buildings(GContext *ctx, const ThemeColors *tc) {
-    static const int8_t bldgs[][3] = {
+    // int16_t required: x values > 127 overflow int8_t
+    static const int16_t bldgs[][3] = {
         {2, 16, 50}, {16, 11, 62}, {26, 14, 44},
-        {155, 14, 58}, {167, 16, 68}, {182, 13, 44}
+        {138, 10, 52}, {152, 14, 58}, {164, 16, 70}, {178, 13, 44}, {190, 8, 56}
     };
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 8; i++) {
         int bx = bldgs[i][0], bw = bldgs[i][1], bh = bldgs[i][2];
         int by = HORIZON_Y - bh;
         graphics_context_set_fill_color(ctx, GCA(tc->landmark1));
@@ -428,21 +429,63 @@ static void draw_flowers(GContext *ctx, const ThemeColors *tc) {
     }
 }
 
+// Beach umbrella: striped half-circle canopy + pole
+static void draw_umbrella(GContext *ctx, int bx, int by, const ThemeColors *tc) {
+    static const int8_t hw_lut[] = {13,13,13,12,12,12,11,10,9,8,6,4,1,0};
+    int R = 13, pole_h = 22;
+    int top_y = by - pole_h - R;
+    for (int dy = 0; dy <= R; dy++) {
+        GColor stripe = ((dy / 4) % 2 == 0) ? GCA(tc->landmark1) : GCA(tc->landmark2);
+        graphics_context_set_stroke_color(ctx, stripe);
+        int hw = hw_lut[dy];
+        graphics_draw_line(ctx, GPoint(bx - hw, top_y + dy), GPoint(bx + hw, top_y + dy));
+    }
+    graphics_context_set_stroke_color(ctx, GCA(tc->landmark1));
+    graphics_draw_line(ctx, GPoint(bx - R, top_y + R), GPoint(bx + R, top_y + R));
+    graphics_draw_line(ctx, GPoint(bx, top_y + R), GPoint(bx, by));
+}
+
+static void draw_beach_umbrellas(GContext *ctx, const ThemeColors *tc) {
+    draw_umbrella(ctx, 20, HORIZON_Y, tc);
+    draw_umbrella(ctx, 184, HORIZON_Y, tc);
+}
+
+// Saguaro cactus: trunk + two arms with upward tips
+static void draw_cactus(GContext *ctx, int bx, int by, int h, const ThemeColors *tc) {
+    GColor c = GCA(tc->landmark1);
+    graphics_context_set_fill_color(ctx, c);
+    graphics_fill_rect(ctx, GRect(bx - 2, by - h, 5, h), 0, GCornerNone);
+    int ay = by - h * 4 / 10;
+    graphics_fill_rect(ctx, GRect(bx - 12, ay - 2, 10, 4), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(bx - 13, ay - h/3, 4, h/3 + 3), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(bx + 3,  ay - 2, 10, 4), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(bx + 10, ay - h/3, 4, h/3 + 3), 0, GCornerNone);
+}
+
+static void draw_cacti(GContext *ctx, const ThemeColors *tc) {
+    draw_cactus(ctx,  9, HORIZON_Y, 26, tc);
+    draw_cactus(ctx, 24, HORIZON_Y, 38, tc);
+    draw_cactus(ctx, 178, HORIZON_Y, 35, tc);
+    draw_cactus(ctx, 193, HORIZON_Y, 24, tc);
+}
+
 // Dispatch the correct landmark for the active theme
 static void draw_landmark(GContext *ctx, const ThemeColors *tc) {
     int t = (int)s_sa.theme;
     if (t < 0 || t >= 7) t = 0;
     switch (t) {
-        case 0: case 1: case 6:   // Vaporwave / Beach / Desert — palms
+        case 0:   // Vaporwave — palms
             draw_palm(ctx, 16,  HORIZON_Y, 32, false, tc);
             draw_palm(ctx,  5,  HORIZON_Y, 22, false, tc);
             draw_palm(ctx, 184, HORIZON_Y, 32, true,  tc);
             draw_palm(ctx, 195, HORIZON_Y, 22, true,  tc);
             break;
-        case 2: draw_mountain_peaks(ctx, tc); break;
-        case 3: draw_evergreens(ctx, tc);     break;
-        case 4: draw_buildings(ctx, tc);      break;
-        case 5: draw_flowers(ctx, tc);        break;
+        case 1: draw_beach_umbrellas(ctx, tc);  break;
+        case 2: draw_mountain_peaks(ctx, tc);   break;
+        case 3: draw_evergreens(ctx, tc);        break;
+        case 4: draw_buildings(ctx, tc);         break;
+        case 5: draw_flowers(ctx, tc);           break;
+        case 6: draw_cacti(ctx, tc);             break;
     }
 }
 
