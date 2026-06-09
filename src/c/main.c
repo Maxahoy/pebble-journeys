@@ -42,99 +42,110 @@ typedef struct {
     uint8_t horizon;
     uint8_t sun_fill;
     uint8_t sun_line;
-    uint8_t landmark1;   // trunk
-    uint8_t landmark2;   // leaves
+    uint8_t landmark1;        // primary landmark color (trunk / rock / building / stem)
+    uint8_t landmark2;        // secondary landmark color (foliage / snow / windows / flower)
     uint8_t bar_ovr;
     uint8_t bar_ovr_glow;
     uint8_t bar_day;
     uint8_t bar_day_glow;
     uint8_t bar_bg;
-    uint8_t txt_ovr;
-    uint8_t txt_day;
+    uint8_t txt_ovr;          // bar label + weather left text
+    uint8_t txt_day;          // bar label + weather right text
     uint8_t info1_bg;
     uint8_t info2_bg;
     uint8_t info1_border;
     uint8_t info2_border;
+    uint8_t txt_time;         // clock TextLayer color
+    uint8_t txt_leg;          // leg-label TextLayer color
+    uint8_t txt_time_shadow;  // outline/shadow for clock (0 = none)
 } ThemeColors;
 
+// argb bit format: 11_RR_GG_BB (2 bits each, fully opaque)
 // 7 themes: Vaporwave, Beach, Mountain, Winter, City, Plains, Desert
 static const ThemeColors s_themes[7] = {
-  { /* 0: Vaporwave */
+  { /* 0: Vaporwave — dark navy sky, neon cyan/magenta */
     .sky={0b11000001,0b11010001,0b11100010,0b11100011,0b11110011,0b11110111,0b11110111},
     .road=0b11000001,.grid_v=0b11001111,.grid_h1=0b11001111,.grid_h2=0b11110011,
     .horizon=0b11110111,.sun_fill=0b11111000,.sun_line=0b11000001,
-    .landmark1=0b11100000,.landmark2=0b11010001,
+    .landmark1=0b11100000,.landmark2=0b11010001,           // palms: red trunk, purple leaves
     .bar_ovr=0b11001111,.bar_ovr_glow=0b11001110,
     .bar_day=0b11110011,.bar_day_glow=0b11100010,
     .bar_bg=0b11000001,.txt_ovr=0b11001111,.txt_day=0b11110111,
     .info1_bg=0b11000001,.info2_bg=0b11010001,
-    .info1_border=0b11001111,.info2_border=0b11110011
+    .info1_border=0b11001111,.info2_border=0b11110011,
+    .txt_time=0b11111111,.txt_leg=0b11001111,.txt_time_shadow=0
   },
-  { /* 1: Beach */
+  { /* 1: Beach — ocean blue sky, warm sandy road, coral accents */
     .sky={0b11000011,0b11001011,0b11001111,0b11001110,0b11111001,0b11111000,0b11111000},
     .road=0b11111001,.grid_v=0b11001111,.grid_h1=0b11111111,.grid_h2=0b11110101,
     .horizon=0b11111000,.sun_fill=0b11111100,.sun_line=0b11111000,
-    .landmark1=0b11100100,.landmark2=0b11001100,
+    .landmark1=0b11100100,.landmark2=0b11001100,           // palms: tan trunk, green leaves
     .bar_ovr=0b11001111,.bar_ovr_glow=0b11001011,
     .bar_day=0b11110101,.bar_day_glow=0b11111000,
-    .bar_bg=0b11000101,.txt_ovr=0b11001111,.txt_day=0b11111000,
+    .bar_bg=0b11000101,.txt_ovr=0b11111111,.txt_day=0b11001111, // white+cyan on dark bar_bg
     .info1_bg=0b11000101,.info2_bg=0b11000111,
-    .info1_border=0b11001111,.info2_border=0b11110101
+    .info1_border=0b11001111,.info2_border=0b11110101,
+    .txt_time=0b11000000,.txt_leg=0b11111111,.txt_time_shadow=0  // black time on bright sky
   },
-  { /* 2: Mountain */
+  { /* 2: Mountain — dark purple/indigo sky, gray road, gold sunrise */
     .sky={0b11000001,0b11010010,0b11100111,0b11110111,0b11111001,0b11111000,0b11111000},
     .road=0b11010101,.grid_v=0b11111111,.grid_h1=0b11111111,.grid_h2=0b11101010,
     .horizon=0b11111000,.sun_fill=0b11111000,.sun_line=0b11100000,
-    .landmark1=0b11100100,.landmark2=0b11000100,
+    .landmark1=0b11101010,.landmark2=0b11111111,           // peaks: gray rock, white snowcap
     .bar_ovr=0b11111000,.bar_ovr_glow=0b11111001,
     .bar_day=0b11001100,.bar_day_glow=0b11001010,
     .bar_bg=0b11010101,.txt_ovr=0b11111000,.txt_day=0b11001110,
     .info1_bg=0b11010101,.info2_bg=0b11000100,
-    .info1_border=0b11111000,.info2_border=0b11001100
+    .info1_border=0b11111000,.info2_border=0b11001100,
+    .txt_time=0b11111111,.txt_leg=0b11111111,.txt_time_shadow=0  // white on dark purple sky
   },
-  { /* 3: Winter */
+  { /* 3: Winter — icy blue-to-white sky, gray road, evergreen trees */
     .sky={0b11000001,0b11000010,0b11000111,0b11010111,0b11101010,0b11111110,0b11111111},
     .road=0b11010101,.grid_v=0b11111111,.grid_h1=0b11111111,.grid_h2=0b11001111,
     .horizon=0b11111110,.sun_fill=0b11111110,.sun_line=0b11101010,
-    .landmark1=0b11101010,.landmark2=0b11111111,
+    .landmark1=0b11000100,.landmark2=0b11111111,           // evergreens: dark green, white snow
     .bar_ovr=0b11001111,.bar_ovr_glow=0b11001011,
     .bar_day=0b11000011,.bar_day_glow=0b11001111,
     .bar_bg=0b11010101,.txt_ovr=0b11001111,.txt_day=0b11111110,
     .info1_bg=0b11000001,.info2_bg=0b11010101,
-    .info1_border=0b11001111,.info2_border=0b11010111
+    .info1_border=0b11001111,.info2_border=0b11010111,
+    .txt_time=0b11111111,.txt_leg=0b11001111,.txt_time_shadow=0b11000000  // white+black outline
   },
-  { /* 4: City */
+  { /* 4: City — very dark sky with amber glow, skyscrapers */
     .sky={0b11000000,0b11010000,0b11100001,0b11100100,0b11110100,0b11111000,0b11111001},
     .road=0b11010101,.grid_v=0b11111000,.grid_h1=0b11111000,.grid_h2=0b11110100,
     .horizon=0b11111001,.sun_fill=0b11111001,.sun_line=0b11100000,
-    .landmark1=0b11010101,.landmark2=0b11000000,
+    .landmark1=0b11010101,.landmark2=0b11111000,           // buildings: gray silhouette, yellow lit windows
     .bar_ovr=0b11111000,.bar_ovr_glow=0b11111001,
     .bar_day=0b11110100,.bar_day_glow=0b11111000,
     .bar_bg=0b11000000,.txt_ovr=0b11111000,.txt_day=0b11110100,
     .info1_bg=0b11000000,.info2_bg=0b11010101,
-    .info1_border=0b11111000,.info2_border=0b11110100
+    .info1_border=0b11111000,.info2_border=0b11110100,
+    .txt_time=0b11111111,.txt_leg=0b11111000,.txt_time_shadow=0  // white on very dark sky
   },
-  { /* 5: Plains */
+  { /* 5: Plains — big blue sky, brass road, wildflowers */
     .sky={0b11000011,0b11001011,0b11001111,0b11011011,0b11111111,0b11111101,0b11111000},
     .road=0b11101001,.grid_v=0b11111100,.grid_h1=0b11111100,.grid_h2=0b11101000,
     .horizon=0b11111000,.sun_fill=0b11111100,.sun_line=0b11111000,
-    .landmark1=0b11100100,.landmark2=0b11101000,
-    .bar_ovr=0b11111100,.bar_ovr_glow=0b11111000,
-    .bar_day=0b11001100,.bar_day_glow=0b11101000,
-    .bar_bg=0b11001000,.txt_ovr=0b11111100,.txt_day=0b11111000,
-    .info1_bg=0b11001000,.info2_bg=0b11001000,
-    .info1_border=0b11111100,.info2_border=0b11001100
+    .landmark1=0b11001000,.landmark2=0b11111100,           // flowers: green stems, yellow blooms
+    .bar_ovr=0b11111111,.bar_ovr_glow=0b11111000,          // white bar on dark navy bar_bg
+    .bar_day=0b11001111,.bar_day_glow=0b11101000,
+    .bar_bg=0b11000001,.txt_ovr=0b11111111,.txt_day=0b11001111, // white+cyan on dark navy bg
+    .info1_bg=0b11000001,.info2_bg=0b11000001,
+    .info1_border=0b11111100,.info2_border=0b11001100,
+    .txt_time=0b11000001,.txt_leg=0b11111111,.txt_time_shadow=0  // oxford blue on bright sky
   },
-  { /* 6: Desert */
+  { /* 6: Desert — hot cerulean/pastel sky, sandy road, cacti */
     .sky={0b11001011,0b11001110,0b11111110,0b11111110,0b11111001,0b11111000,0b11110100},
     .road=0b11111001,.grid_v=0b11110100,.grid_h1=0b11111000,.grid_h2=0b11100100,
     .horizon=0b11110100,.sun_fill=0b11111111,.sun_line=0b11111000,
-    .landmark1=0b11100100,.landmark2=0b11001000,
+    .landmark1=0b11100100,.landmark2=0b11001000,           // cacti: tan body, army green accents
     .bar_ovr=0b11110100,.bar_ovr_glow=0b11111000,
     .bar_day=0b11101000,.bar_day_glow=0b11001100,
-    .bar_bg=0b11010000,.txt_ovr=0b11111000,.txt_day=0b11001111,
+    .bar_bg=0b11010000,.txt_ovr=0b11111111,.txt_day=0b11001111, // white+cyan on dark red bar_bg
     .info1_bg=0b11010000,.info2_bg=0b11010000,
-    .info1_border=0b11110100,.info2_border=0b11111000
+    .info1_border=0b11110100,.info2_border=0b11111000,
+    .txt_time=0b11000001,.txt_leg=0b11111111,.txt_time_shadow=0  // oxford blue on bright sandy sky
   }
 };
 
@@ -193,6 +204,13 @@ static const ThemeColors *prv_theme(void) {
     return &s_themes[t];
 }
 
+static void update_text_colors(void) {
+    if (!s_time_layer || !s_leg_layer) return;
+    const ThemeColors *tc = prv_theme();
+    text_layer_set_text_color(s_time_layer, GCA(tc->txt_time));
+    text_layer_set_text_color(s_leg_layer,  GCA(tc->txt_leg));
+}
+
 static char s_time_buf[8];
 static char s_leg_buf[24];
 static char s_ovr_pct_buf[8];
@@ -220,6 +238,7 @@ static void prv_default_settings(void) {
     s_sa.trip_day         = 1;
     s_sa.show_weather     = true;
     s_sa.temp_unit_f      = false;
+    s_sa.theme            = 0;
     s_sb.cached_temp_cur  = -99;
     s_sb.cached_temp_dest = -99;
     strncpy(s_sb.waypoints[0], "Stop 1", sizeof(s_sb.waypoints[0])-1);
@@ -318,6 +337,115 @@ static void draw_palm(GContext *ctx, int bx, int by, int trunk_h, bool flip,
     graphics_fill_circle(ctx, GPoint(tx + 5, ty + 3), 4);
 }
 
+// Draw a triangular mountain peak; rock drawn first, then snowcap overdrawn
+static void draw_mountain_peak(GContext *ctx, int px, int py, int base_half,
+                                GColor rock, GColor snow) {
+    int h = HORIZON_Y - py;
+    int snow_h = h / 3;
+    graphics_context_set_stroke_color(ctx, rock);
+    for (int dy = snow_h; dy <= h; dy++) {
+        int hw = (dy * base_half) / h;
+        graphics_draw_line(ctx, GPoint(px - hw, py + dy), GPoint(px + hw, py + dy));
+    }
+    graphics_context_set_stroke_color(ctx, snow);
+    for (int dy = 0; dy < snow_h; dy++) {
+        int hw = (dy * base_half) / h;
+        graphics_draw_line(ctx, GPoint(px - hw, py + dy), GPoint(px + hw, py + dy));
+    }
+}
+
+static void draw_mountain_peaks(GContext *ctx, const ThemeColors *tc) {
+    GColor rock = GCA(tc->landmark1), snow = GCA(tc->landmark2);
+    draw_mountain_peak(ctx,  22, 62, 32, rock, snow);   // left foreground
+    draw_mountain_peak(ctx,  -4, 72, 20, rock, snow);   // left background
+    draw_mountain_peak(ctx, 178, 62, 32, rock, snow);   // right foreground
+    draw_mountain_peak(ctx, 204, 72, 20, rock, snow);   // right background
+}
+
+// Pine/evergreen: triangular body with snow on upper third
+static void draw_evergreen(GContext *ctx, int bx, int by, int h,
+                            const ThemeColors *tc) {
+    int max_hw = h / 3;
+    graphics_context_set_stroke_color(ctx, GCA(tc->landmark1));
+    for (int dy = 0; dy < h; dy++) {
+        int hw = ((h - dy) * max_hw) / h;
+        graphics_draw_line(ctx, GPoint(bx - hw, by - dy), GPoint(bx + hw, by - dy));
+    }
+    int snow_start = h * 65 / 100;
+    graphics_context_set_stroke_color(ctx, GCA(tc->landmark2));
+    for (int dy = snow_start; dy < h; dy++) {
+        int hw = ((h - dy) * max_hw) / h;
+        if (hw > 0)
+            graphics_draw_line(ctx, GPoint(bx - hw, by - dy), GPoint(bx + hw, by - dy));
+    }
+    graphics_context_set_fill_color(ctx, GCA(tc->landmark1));
+    graphics_fill_rect(ctx, GRect(bx - 2, by, 4, 4), 0, GCornerNone);
+}
+
+static void draw_evergreens(GContext *ctx, const ThemeColors *tc) {
+    draw_evergreen(ctx, 14, HORIZON_Y, 36, tc);
+    draw_evergreen(ctx, 30, HORIZON_Y, 26, tc);
+    draw_evergreen(ctx, 182, HORIZON_Y, 36, tc);
+    draw_evergreen(ctx, 192, HORIZON_Y, 26, tc);
+}
+
+// City skyscrapers with lit windows
+static void draw_buildings(GContext *ctx, const ThemeColors *tc) {
+    static const int8_t bldgs[][3] = {
+        {2, 16, 50}, {16, 11, 62}, {26, 14, 44},
+        {155, 14, 58}, {167, 16, 68}, {182, 13, 44}
+    };
+    for (int i = 0; i < 6; i++) {
+        int bx = bldgs[i][0], bw = bldgs[i][1], bh = bldgs[i][2];
+        int by = HORIZON_Y - bh;
+        graphics_context_set_fill_color(ctx, GCA(tc->landmark1));
+        graphics_fill_rect(ctx, GRect(bx, by, bw, bh + 1), 0, GCornerNone);
+        // Lit windows in rows
+        graphics_context_set_fill_color(ctx, GCA(tc->landmark2));
+        for (int wy = by + 4; wy < HORIZON_Y - 4; wy += 6) {
+            for (int wx = bx + 3; wx < bx + bw - 3; wx += 5) {
+                graphics_fill_rect(ctx, GRect(wx, wy, 2, 2), 0, GCornerNone);
+            }
+        }
+    }
+}
+
+// Wildflowers: stems + dot blooms along the horizon
+static void draw_flowers(GContext *ctx, const ThemeColors *tc) {
+    static const int8_t fx[] = {7, 17, 27, 39, 52, 149, 162, 172, 183, 193};
+    graphics_context_set_stroke_color(ctx, GCA(tc->landmark1));
+    for (int i = 0; i < 10; i++) {
+        graphics_draw_line(ctx, GPoint(fx[i], HORIZON_Y),
+                                GPoint(fx[i], HORIZON_Y - 11));
+    }
+    graphics_context_set_fill_color(ctx, GCA(tc->landmark2));
+    for (int i = 0; i < 10; i++) {
+        graphics_fill_circle(ctx, GPoint(fx[i], HORIZON_Y - 13), 3);
+    }
+    graphics_context_set_fill_color(ctx, GCA(tc->landmark1));
+    for (int i = 0; i < 10; i++) {
+        graphics_fill_circle(ctx, GPoint(fx[i], HORIZON_Y - 13), 1);
+    }
+}
+
+// Dispatch the correct landmark for the active theme
+static void draw_landmark(GContext *ctx, const ThemeColors *tc) {
+    int t = (int)s_sa.theme;
+    if (t < 0 || t >= 7) t = 0;
+    switch (t) {
+        case 0: case 1: case 6:   // Vaporwave / Beach / Desert — palms
+            draw_palm(ctx, 16,  HORIZON_Y, 32, false, tc);
+            draw_palm(ctx,  5,  HORIZON_Y, 22, false, tc);
+            draw_palm(ctx, 184, HORIZON_Y, 32, true,  tc);
+            draw_palm(ctx, 195, HORIZON_Y, 22, true,  tc);
+            break;
+        case 2: draw_mountain_peaks(ctx, tc); break;
+        case 3: draw_evergreens(ctx, tc);     break;
+        case 4: draw_buildings(ctx, tc);      break;
+        case 5: draw_flowers(ctx, tc);        break;
+    }
+}
+
 static void draw_neon_bar(GContext *ctx, int x, int y, int w, int h,
                            int current, int total, GColor fill, GColor glow, GColor bg) {
     graphics_context_set_fill_color(ctx, glow);
@@ -376,11 +504,22 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_draw_line(ctx, GPoint(0, HORIZON_Y),   GPoint(w, HORIZON_Y));
     graphics_draw_line(ctx, GPoint(0, HORIZON_Y+1), GPoint(w, HORIZON_Y+1));
 
-    // 7. Landmarks
-    draw_palm(ctx, 16,  HORIZON_Y, 32, false, tc);
-    draw_palm(ctx, 5,   HORIZON_Y, 22, false, tc);
-    draw_palm(ctx, 184, HORIZON_Y, 32, true,  tc);
-    draw_palm(ctx, 195, HORIZON_Y, 22, true,  tc);
+    // 7. Landmarks (theme-specific)
+    draw_landmark(ctx, tc);
+
+    // 7b. Clock shadow/outline — drawn in canvas so TextLayer renders on top
+    if (tc->txt_time_shadow) {
+        GFont f42 = fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS);
+        graphics_context_set_text_color(ctx, GCA(tc->txt_time_shadow));
+        graphics_draw_text(ctx, s_time_buf, f42, GRect(-1, 48, w+2, 47),
+            GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+        graphics_draw_text(ctx, s_time_buf, f42, GRect(1, 48, w+2, 47),
+            GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+        graphics_draw_text(ctx, s_time_buf, f42, GRect(0, 47, w, 47),
+            GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+        graphics_draw_text(ctx, s_time_buf, f42, GRect(0, 49, w, 47),
+            GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+    }
 
     // 8. Progress bars
     int day_idx = (int)s_sa.trip_day - 1;
@@ -431,28 +570,28 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
                       GCA(tc->bar_day), GCA(tc->bar_day_glow), GCA(tc->bar_bg));
     }
 
-    // Y=165–189: open road visible (24px in two-bar mode, 56px in one-day mode)
+    // Y=165–187: open road visible (22px in two-bar mode, 54px in one-day mode)
 
-    // 9. Weather bar  (Y=190 H=20, to Y=210 — extra 2px prevents text clipping)
+    // 9. Weather bar  (Y=188 H=20, to Y=208)
     if (s_sa.show_weather) {
-        draw_info_bar(ctx, 190, 20, w, GCA(tc->info1_bg), GCA(tc->info1_border));
+        draw_info_bar(ctx, 188, 20, w, GCA(tc->info1_bg), GCA(tc->info1_border));
         graphics_context_set_stroke_color(ctx, GCA(tc->info1_border));
-        graphics_draw_line(ctx, GPoint(w/2, 190), GPoint(w/2, 210));
+        graphics_draw_line(ctx, GPoint(w/2, 188), GPoint(w/2, 208));
         graphics_context_set_text_color(ctx, GCA(tc->txt_ovr));
         graphics_draw_text(ctx, s_weather_cur_buf, f18,
-            GRect(2, 191, w/2 - 3, 18),
+            GRect(2, 189, w/2 - 3, 18),
             GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
         graphics_context_set_text_color(ctx, GCA(tc->txt_day));
         graphics_draw_text(ctx, s_weather_dst_buf, f18,
-            GRect(w/2 + 2, 191, w/2 - 3, 18),
+            GRect(w/2 + 2, 189, w/2 - 3, 18),
             GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
     }
 
-    // 10. Route bar  (Y=210 H=18, fills to screen bottom Y=228)
-    draw_info_bar(ctx, 210, 18, w, GCA(tc->info2_bg), GCA(tc->info2_border));
+    // 10. Route bar  (Y=208 H=20, fills to Y=228; text at Y=209 gives 3px bottom buffer)
+    draw_info_bar(ctx, 208, 20, w, GCA(tc->info2_bg), GCA(tc->info2_border));
     graphics_context_set_text_color(ctx, C_TXT_WHT);
     graphics_draw_text(ctx, s_route_buf, f18,
-        GRect(2, 211, w-4, 17),
+        GRect(2, 209, w-4, 16),
         GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 }
 
@@ -694,6 +833,7 @@ static void inbox_received(DictionaryIterator *iterator, void *context) {
             (int)s_sa.trip_day, (int)s_sa.progress_unit);
 
     if (changed) prv_save_settings();
+    update_text_colors();
     update_progress();
     update_weather();
 }
@@ -737,6 +877,7 @@ static void window_load(Window *window) {
     text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
     layer_add_child(wl, text_layer_get_layer(s_time_layer));
 
+    update_text_colors();
     update_time();
     update_progress();
     update_weather();
