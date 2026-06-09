@@ -33,6 +33,7 @@ function syncSettingsFromClay() {
         if (s['TempUnit']     !== undefined) localStorage.setItem('tempUnit',     '' + s['TempUnit']);
         if (s['ShowWeather']  !== undefined) localStorage.setItem('showWeather',  '' + s['ShowWeather']);
         if (s['Theme']        !== undefined) localStorage.setItem('theme',        '' + s['Theme']);
+        if (s['AutoTheme']    !== undefined) localStorage.setItem('autoTheme',    '' + s['AutoTheme']);
         console.log('syncSettingsFromClay: start=' + s['StartName'] + ' dest=' + s['DestName']);
     } catch(e) {
         console.log('syncSettingsFromClay error: ' + e);
@@ -328,23 +329,60 @@ function fetchWeatherAt(lat, lon, callback) {
               'latitude=' + lat + '&longitude=' + lon +
               '&current=temperature_2m,weather_code';
     xhrGet(url, function(response) {
-        if (!response) { callback(null, 0); return; }
+        if (!response) { callback(null, 0, -1); return; }
         try {
             var json = JSON.parse(response);
-            var temp = Math.round(json.current.temperature_2m);
-            var cond = weatherCodeToInt(json.current.weather_code);
-            callback(temp, cond);
+            var temp    = Math.round(json.current.temperature_2m);
+            var rawCode = json.current.weather_code;
+            var cond    = weatherCodeToInt(rawCode);
+            callback(temp, cond, rawCode);
         } catch(e) {
             console.log('Weather parse error: ' + e);
-            callback(null, 0);
+            callback(null, 0, -1);
         }
     });
+}
+
+// Maps GPS lat/lon + temperature + raw WMO weather code to a theme index (0-6).
+// City (4) is not detectable from weather data, so it never auto-selects.
+function computeBiomeTheme(lat, lon, tempC, wmoCode) {
+    var absLat  = Math.abs(lat);
+    var isSnow  = (wmoCode >= 70 && wmoCode <= 79) || (wmoCode >= 85 && wmoCode <= 86);
+    var isClear = (wmoCode >= 0 && wmoCode <= 3);
+
+    // Snow precipitation or freezing temps → Winter
+    if (isSnow || tempC <= -2) return 3;
+
+    // Cold + high latitude → still Winter (polar tundra)
+    if (tempC <= 5 && absLat >= 60) return 3;
+
+    // Hot + clear + subtropical dry belt → Desert
+    if (tempC >= 28 && isClear && absLat >= 8 && absLat <= 40) return 6;
+
+    // Cold + clear + mid-to-high latitude → Mountain
+    if (tempC <= 12 && isClear && absLat >= 38) return 2;
+
+    // Warm + tropical or coastal latitudes → Beach
+    if (tempC >= 24 && absLat < 40) return 1;
+
+    // Warm + clear + temperate → Plains
+    if (tempC >= 16 && isClear) return 5;
+
+    // Warm regardless of cloud cover → Beach
+    if (tempC >= 22) return 1;
+
+    // Cool + clear + lower-mid latitude → Mountain
+    if (isClear && absLat >= 30) return 2;
+
+    // Default fallback
+    return 0;  // Vaporwave
 }
 
 var s_curTemp = null, s_curCond = 0;
 var s_dstTemp = null, s_dstCond = 0;
 var s_curDone = false, s_dstDone = false;
 var s_detectedDay = null, s_detectedDist = null;
+var s_biomeTheme = null;  // non-null when auto-theme computed a result
 
 function trySendWeather() {
     if (!s_curDone || !s_dstDone) return;
@@ -356,9 +394,10 @@ function trySendWeather() {
         'COND_DEST':    s_dstCond
     };
 
-    // Piggyback auto-detected trip position into the same message
+    // Piggyback auto-detected trip position and biome theme into the same message
     if (s_detectedDay  !== null) dict['TripDay']         = s_detectedDay;
     if (s_detectedDist !== null) dict['CurrentDistance'] = s_detectedDist;
+    if (s_biomeTheme   !== null) dict['Theme']           = s_biomeTheme;
 
     console.log('Sending weather: cur=' + dict['TEMP_CURRENT'] +
                 ' dst=' + dict['TEMP_DEST'] +
@@ -373,6 +412,7 @@ function trySendWeather() {
 function fetchBothWeather() {
     s_curDone = false; s_dstDone = false;
     s_detectedDay = null; s_detectedDist = null;
+    s_biomeTheme = null;
 
     // Current location — GPS
     navigator.geolocation.getCurrentPosition(
@@ -386,8 +426,13 @@ function fetchBothWeather() {
                 s_detectedDist = detection.distance;
             }
 
-            fetchWeatherAt(lat, lon, function(temp, cond) {
+            fetchWeatherAt(lat, lon, function(temp, cond, rawCode) {
                 s_curTemp = temp; s_curCond = cond;
+                var autoTheme = localStorage.getItem('autoTheme');
+                if ((autoTheme === '1' || autoTheme === 'true') && temp !== null && rawCode >= 0) {
+                    s_biomeTheme = computeBiomeTheme(lat, lon, temp, rawCode);
+                    console.log('Auto-theme: tempC=' + temp + ' wmo=' + rawCode + ' → theme=' + s_biomeTheme);
+                }
                 s_curDone = true;
                 trySendWeather();
             });
@@ -455,6 +500,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
         if (settings['TempUnit']     !== undefined) localStorage.setItem('tempUnit',     '' + settings['TempUnit']);
         if (settings['ShowWeather']  !== undefined) localStorage.setItem('showWeather',  '' + settings['ShowWeather']);
         if (settings['Theme']        !== undefined) localStorage.setItem('theme',        '' + settings['Theme']);
+        if (settings['AutoTheme']    !== undefined) localStorage.setItem('autoTheme',    '' + settings['AutoTheme']);
 
         console.log('Clay settings synced: start=' + settings['StartName'] + ' dest=' + settings['DestName']);
         calculateTripDistances();

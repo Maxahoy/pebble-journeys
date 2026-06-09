@@ -62,6 +62,13 @@ module.exports = [
     "items": [
       { "type": "heading", "defaultValue": "Appearance" },
       {
+        "type": "toggle",
+        "messageKey": "AutoTheme",
+        "label": "Auto Theme (Experimental)",
+        "description": "Uses your GPS location and current weather to pick a matching theme automatically. Overrides the manual Theme setting below.",
+        "defaultValue": false
+      },
+      {
         "type": "select",
         "messageKey": "Theme",
         "label": "Theme",

@@ -437,7 +437,7 @@ static void draw_umbrella(GContext *ctx, int bx, int by, const ThemeColors *tc) 
     for (int dy = 0; dy <= R; dy++) {
         GColor stripe = ((dy / 4) % 2 == 0) ? GCA(tc->landmark1) : GCA(tc->landmark2);
         graphics_context_set_stroke_color(ctx, stripe);
-        int hw = hw_lut[dy];
+        int hw = hw_lut[R - dy];  // reversed: narrow peak at top, wide rim at bottom
         graphics_draw_line(ctx, GPoint(bx - hw, top_y + dy), GPoint(bx + hw, top_y + dy));
     }
     graphics_context_set_stroke_color(ctx, GCA(tc->landmark1));
