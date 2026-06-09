@@ -3,3 +3,8 @@ node_modules/
 .lock-waf_linux_build
 *.pyc
 __pycache__/
+preview_aplite.gif
+preview_basalt.gif
+preview_chalk.gif
+preview_diorite.gif
+preview_flint.gif
