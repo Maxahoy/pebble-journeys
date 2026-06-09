@@ -24,7 +24,8 @@
       "CurrentDistance", "ProgressUnit", "TripDay",
       "ShowWeather", "TempUnit",
       "CalcTotalDist",
-      "CalcDayDist1", "CalcDayDist2", "CalcDayDist3", "CalcDayDist4", "CalcDayDist5"
+      "CalcDayDist1", "CalcDayDist2", "CalcDayDist3", "CalcDayDist4", "CalcDayDist5",
+      "ResetData"
     ],
     "resources": { "media": [] }
   }

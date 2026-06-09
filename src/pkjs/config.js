@@ -92,6 +92,22 @@ module.exports = [
     ]
   },
   {
+    "type": "section",
+    "items": [
+      { "type": "heading", "defaultValue": "Danger Zone" },
+      {
+        "type": "text",
+        "defaultValue": "Toggle 'Full Reset' ON then tap Save to wipe all saved distances and settings from the watch. Fixes stuck 0% progress."
+      },
+      {
+        "type": "toggle",
+        "messageKey": "ResetData",
+        "label": "Full Reset",
+        "defaultValue": false
+      }
+    ]
+  },
+  {
     "type": "submit",
     "defaultValue": "Save Settings"
   }

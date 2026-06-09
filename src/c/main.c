@@ -374,6 +374,8 @@ static void update_progress(void) {
     // Overall %
     int p = (tot > 0) ? (cur * 100) / tot : 0;
     if (p > 100) p = 100;
+    APP_LOG(APP_LOG_LEVEL_INFO, "Progress: cur=%d tot=%d pct=%d%% day=%d d_cur=%d d_tot=%d",
+            cur, tot, p, day_n, d_cur, d_tot);
     snprintf(s_ovr_pct_buf, sizeof(s_ovr_pct_buf), "%d%%", p);
 
     // Day %
@@ -499,6 +501,18 @@ static void battery_cb(BatteryChargeState state) {
 static void inbox_received(DictionaryIterator *iterator, void *context) {
     bool changed = false;
 
+    // Full reset — checked first so defaults are applied before remaining Clay settings land
+    {
+        Tuple *_t = dict_find(iterator, MESSAGE_KEY_ResetData);
+        if (_t && _t->value->int32 != 0) {
+            APP_LOG(APP_LOG_LEVEL_INFO, "RESET: wiping all persisted trip data");
+            prv_default_settings();
+            prv_save_settings();
+            APP_LOG(APP_LOG_LEVEL_INFO, "RESET done: total=%ld cur=%ld",
+                    (long)s_sa.total_distance, (long)s_sa.current_distance);
+        }
+    }
+
     // Weather data from pkjs (raw °C, condition int)
     {
         Tuple *t = dict_find(iterator, MESSAGE_KEY_TEMP_CURRENT);
@@ -554,6 +568,10 @@ static void inbox_received(DictionaryIterator *iterator, void *context) {
 #undef RI8
 #undef RB
 #undef RS
+
+    APP_LOG(APP_LOG_LEVEL_INFO, "Rx: total=%ld cur=%ld day=%d unit=%d",
+            (long)s_sa.total_distance, (long)s_sa.current_distance,
+            (int)s_sa.trip_day, (int)s_sa.progress_unit);
 
     if (changed) prv_save_settings();
     update_progress();
