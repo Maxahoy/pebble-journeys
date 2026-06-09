@@ -60,6 +60,27 @@ module.exports = [
   {
     "type": "section",
     "items": [
+      { "type": "heading", "defaultValue": "Appearance" },
+      {
+        "type": "select",
+        "messageKey": "Theme",
+        "label": "Theme",
+        "defaultValue": 0,
+        "options": [
+          { "label": "Vaporwave", "value": 0 },
+          { "label": "Beach", "value": 1 },
+          { "label": "Mountain", "value": 2 },
+          { "label": "Winter", "value": 3 },
+          { "label": "City", "value": 4 },
+          { "label": "Plains", "value": 5 },
+          { "label": "Desert", "value": 6 }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
       { "type": "heading", "defaultValue": "Weather" },
       {
         "type": "toggle",

@@ -32,6 +32,7 @@ function syncSettingsFromClay() {
         if (s['ProgressUnit'] !== undefined) localStorage.setItem('progressUnit', '' + s['ProgressUnit']);
         if (s['TempUnit']     !== undefined) localStorage.setItem('tempUnit',     '' + s['TempUnit']);
         if (s['ShowWeather']  !== undefined) localStorage.setItem('showWeather',  '' + s['ShowWeather']);
+        if (s['Theme']        !== undefined) localStorage.setItem('theme',        '' + s['Theme']);
         console.log('syncSettingsFromClay: start=' + s['StartName'] + ' dest=' + s['DestName']);
     } catch(e) {
         console.log('syncSettingsFromClay error: ' + e);
@@ -453,6 +454,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
         if (settings['ProgressUnit'] !== undefined) localStorage.setItem('progressUnit', '' + settings['ProgressUnit']);
         if (settings['TempUnit']     !== undefined) localStorage.setItem('tempUnit',     '' + settings['TempUnit']);
         if (settings['ShowWeather']  !== undefined) localStorage.setItem('showWeather',  '' + settings['ShowWeather']);
+        if (settings['Theme']        !== undefined) localStorage.setItem('theme',        '' + settings['Theme']);
 
         console.log('Clay settings synced: start=' + settings['StartName'] + ' dest=' + settings['DestName']);
         calculateTripDistances();

@@ -30,6 +30,114 @@
 #define C_BAR_BG_SOLID  GColorOxfordBlue
 #define C_BAR_BG_SOLID2 GColorImperialPurple
 
+// GColor from raw argb byte (used for theme color tables)
+#define GCA(v) ((GColor){.argb = (v)})
+
+typedef struct {
+    uint8_t sky[7];
+    uint8_t road;
+    uint8_t grid_v;
+    uint8_t grid_h1;
+    uint8_t grid_h2;
+    uint8_t horizon;
+    uint8_t sun_fill;
+    uint8_t sun_line;
+    uint8_t landmark1;   // trunk
+    uint8_t landmark2;   // leaves
+    uint8_t bar_ovr;
+    uint8_t bar_ovr_glow;
+    uint8_t bar_day;
+    uint8_t bar_day_glow;
+    uint8_t bar_bg;
+    uint8_t txt_ovr;
+    uint8_t txt_day;
+    uint8_t info1_bg;
+    uint8_t info2_bg;
+    uint8_t info1_border;
+    uint8_t info2_border;
+} ThemeColors;
+
+// 7 themes: Vaporwave, Beach, Mountain, Winter, City, Plains, Desert
+static const ThemeColors s_themes[7] = {
+  { /* 0: Vaporwave */
+    .sky={0b11000001,0b11010001,0b11100010,0b11100011,0b11110011,0b11110111,0b11110111},
+    .road=0b11000001,.grid_v=0b11001111,.grid_h1=0b11001111,.grid_h2=0b11110011,
+    .horizon=0b11110111,.sun_fill=0b11111000,.sun_line=0b11000001,
+    .landmark1=0b11100000,.landmark2=0b11010001,
+    .bar_ovr=0b11001111,.bar_ovr_glow=0b11001110,
+    .bar_day=0b11110011,.bar_day_glow=0b11100010,
+    .bar_bg=0b11000001,.txt_ovr=0b11001111,.txt_day=0b11110111,
+    .info1_bg=0b11000001,.info2_bg=0b11010001,
+    .info1_border=0b11001111,.info2_border=0b11110011
+  },
+  { /* 1: Beach */
+    .sky={0b11000011,0b11001011,0b11001111,0b11001110,0b11111001,0b11111000,0b11111000},
+    .road=0b11111001,.grid_v=0b11001111,.grid_h1=0b11111111,.grid_h2=0b11110101,
+    .horizon=0b11111000,.sun_fill=0b11111100,.sun_line=0b11111000,
+    .landmark1=0b11100100,.landmark2=0b11001100,
+    .bar_ovr=0b11001111,.bar_ovr_glow=0b11001011,
+    .bar_day=0b11110101,.bar_day_glow=0b11111000,
+    .bar_bg=0b11000101,.txt_ovr=0b11001111,.txt_day=0b11111000,
+    .info1_bg=0b11000101,.info2_bg=0b11000111,
+    .info1_border=0b11001111,.info2_border=0b11110101
+  },
+  { /* 2: Mountain */
+    .sky={0b11000001,0b11010010,0b11100111,0b11110111,0b11111001,0b11111000,0b11111000},
+    .road=0b11010101,.grid_v=0b11111111,.grid_h1=0b11111111,.grid_h2=0b11101010,
+    .horizon=0b11111000,.sun_fill=0b11111000,.sun_line=0b11100000,
+    .landmark1=0b11100100,.landmark2=0b11000100,
+    .bar_ovr=0b11111000,.bar_ovr_glow=0b11111001,
+    .bar_day=0b11001100,.bar_day_glow=0b11001010,
+    .bar_bg=0b11010101,.txt_ovr=0b11111000,.txt_day=0b11001110,
+    .info1_bg=0b11010101,.info2_bg=0b11000100,
+    .info1_border=0b11111000,.info2_border=0b11001100
+  },
+  { /* 3: Winter */
+    .sky={0b11000001,0b11000010,0b11000111,0b11010111,0b11101010,0b11111110,0b11111111},
+    .road=0b11010101,.grid_v=0b11111111,.grid_h1=0b11111111,.grid_h2=0b11001111,
+    .horizon=0b11111110,.sun_fill=0b11111110,.sun_line=0b11101010,
+    .landmark1=0b11101010,.landmark2=0b11111111,
+    .bar_ovr=0b11001111,.bar_ovr_glow=0b11001011,
+    .bar_day=0b11000011,.bar_day_glow=0b11001111,
+    .bar_bg=0b11010101,.txt_ovr=0b11001111,.txt_day=0b11111110,
+    .info1_bg=0b11000001,.info2_bg=0b11010101,
+    .info1_border=0b11001111,.info2_border=0b11010111
+  },
+  { /* 4: City */
+    .sky={0b11000000,0b11010000,0b11100001,0b11100100,0b11110100,0b11111000,0b11111001},
+    .road=0b11010101,.grid_v=0b11111000,.grid_h1=0b11111000,.grid_h2=0b11110100,
+    .horizon=0b11111001,.sun_fill=0b11111001,.sun_line=0b11100000,
+    .landmark1=0b11010101,.landmark2=0b11000000,
+    .bar_ovr=0b11111000,.bar_ovr_glow=0b11111001,
+    .bar_day=0b11110100,.bar_day_glow=0b11111000,
+    .bar_bg=0b11000000,.txt_ovr=0b11111000,.txt_day=0b11110100,
+    .info1_bg=0b11000000,.info2_bg=0b11010101,
+    .info1_border=0b11111000,.info2_border=0b11110100
+  },
+  { /* 5: Plains */
+    .sky={0b11000011,0b11001011,0b11001111,0b11011011,0b11111111,0b11111101,0b11111000},
+    .road=0b11101001,.grid_v=0b11111100,.grid_h1=0b11111100,.grid_h2=0b11101000,
+    .horizon=0b11111000,.sun_fill=0b11111100,.sun_line=0b11111000,
+    .landmark1=0b11100100,.landmark2=0b11101000,
+    .bar_ovr=0b11111100,.bar_ovr_glow=0b11111000,
+    .bar_day=0b11001100,.bar_day_glow=0b11101000,
+    .bar_bg=0b11001000,.txt_ovr=0b11111100,.txt_day=0b11111000,
+    .info1_bg=0b11001000,.info2_bg=0b11001000,
+    .info1_border=0b11111100,.info2_border=0b11001100
+  },
+  { /* 6: Desert */
+    .sky={0b11001011,0b11001110,0b11111110,0b11111110,0b11111001,0b11111000,0b11110100},
+    .road=0b11111001,.grid_v=0b11110100,.grid_h1=0b11111000,.grid_h2=0b11100100,
+    .horizon=0b11110100,.sun_fill=0b11111111,.sun_line=0b11111000,
+    .landmark1=0b11100100,.landmark2=0b11001000,
+    .bar_ovr=0b11110100,.bar_ovr_glow=0b11111000,
+    .bar_day=0b11101000,.bar_day_glow=0b11001100,
+    .bar_bg=0b11010000,.txt_ovr=0b11111000,.txt_day=0b11001111,
+    .info1_bg=0b11010000,.info2_bg=0b11010000,
+    .info1_border=0b11110100,.info2_border=0b11111000
+  }
+};
+
 // === LAYOUT ===
 #define HORIZON_Y  97
 #define BAR_X      10
@@ -53,6 +161,7 @@ typedef struct {
     int8_t  trip_day;        // 1–6
     bool    show_weather;
     bool    temp_unit_f;
+    int8_t  theme;        // 0=Vaporwave 1=Beach 2=Mountain 3=Winter 4=City 5=Plains 6=Desert
 } TripSettingsA;
 
 // sizeof(TripSettingsB) ≈ 104 bytes
@@ -77,6 +186,12 @@ static int s_drive_offset = 0;
 static TripSettingsA s_sa;
 static TripSettingsB s_sb;
 static int s_battery_level = 100;
+
+static const ThemeColors *prv_theme(void) {
+    int t = (int)s_sa.theme;
+    if (t < 0 || t >= 7) t = 0;
+    return &s_themes[t];
+}
 
 static char s_time_buf[8];
 static char s_leg_buf[24];
@@ -126,39 +241,27 @@ static void prv_save_settings(void) {
 
 // === DRAW HELPERS ===
 
-static void draw_sky(GContext *ctx, int w) {
-    // 7 bands from deep navy (top) → hot pink (horizon)
-    static const struct { uint8_t y; uint8_t argb; } bands[] = {
-        {14, 0b11000001}, // oxford blue
-        {28, 0b11010001}, // imperial purple
-        {44, 0b11100010}, // medium purple
-        {60, 0b11100011}, // vivid violet
-        {76, 0b11110011}, // magenta
-        {88, 0b11110111}, // shocking pink
-        {97, 0b11110111}, // horizon level
-    };
+static void draw_sky(GContext *ctx, int w, const ThemeColors *tc) {
+    static const uint8_t band_y[] = {14, 28, 44, 60, 76, 88, 97};
     int prev = 0;
     for (int i = 0; i < 7; i++) {
-        graphics_context_set_fill_color(ctx, ((GColor){.argb = bands[i].argb}));
-        graphics_fill_rect(ctx, GRect(0, prev, w, bands[i].y - prev), 0, GCornerNone);
-        prev = bands[i].y;
+        graphics_context_set_fill_color(ctx, GCA(tc->sky[i]));
+        graphics_fill_rect(ctx, GRect(0, prev, w, band_y[i] - prev), 0, GCornerNone);
+        prev = band_y[i];
     }
 }
 
-static void draw_sun(GContext *ctx) {
+static void draw_sun(GContext *ctx, const ThemeColors *tc) {
     int cx = 100, cy = 47, r = 28;
-    // Yellow circle
-    graphics_context_set_fill_color(ctx, C_SUN_FILL);
+    graphics_context_set_fill_color(ctx, GCA(tc->sun_fill));
     graphics_fill_circle(ctx, GPoint(cx, cy), r);
-    // Dark horizontal stripes in lower half (retrowave look)
-    // Half-widths for dy = 0,3,6,...,27
     static const uint8_t hw[] = {28,27,27,26,25,23,21,18,14,7};
     for (int i = 0; i < 10; i++) {
         int sy = cy + i * 3;
         if (sy < cy) continue;
         if (sy > cy + r) break;
         if (i % 2 == 0) {
-            graphics_context_set_fill_color(ctx, C_SUN_LINE);
+            graphics_context_set_fill_color(ctx, GCA(tc->sun_line));
             graphics_fill_rect(ctx, GRect(cx - hw[i], sy, hw[i] * 2, 2), 0, GCornerNone);
         }
     }
@@ -174,12 +277,12 @@ static void draw_battery(GContext *ctx, int w) {
     graphics_fill_rect(ctx, GRect(bw, 0, w - bw, 3), 0, GCornerNone);
 }
 
-static void draw_grid(GContext *ctx, int w, int h, int offset) {
+static void draw_grid(GContext *ctx, int w, int h, int offset, const ThemeColors *tc) {
     int vx = w / 2, vy = HORIZON_Y;
     int road_h = h - vy;  // 228 - 97 = 131
 
     // Converging perspective lines
-    graphics_context_set_stroke_color(ctx, C_GRID_V);
+    graphics_context_set_stroke_color(ctx, GCA(tc->grid_v));
     for (int i = -5; i <= 5; i++) {
         graphics_draw_line(ctx, GPoint(vx, vy), GPoint(vx + i * 22, h));
     }
@@ -193,20 +296,21 @@ static void draw_grid(GContext *ctx, int w, int h, int offset) {
         int y = vy + dy;
         if (y >= h) continue;
         int spread = (dy * vx) / road_h;
-        graphics_context_set_stroke_color(ctx, (i % 2 == 0) ? C_GRID_H1 : C_GRID_H2);
+        graphics_context_set_stroke_color(ctx, (i % 2 == 0) ? GCA(tc->grid_h1) : GCA(tc->grid_h2));
         graphics_draw_line(ctx, GPoint(vx - spread, y), GPoint(vx + spread, y));
     }
 }
 
-static void draw_palm(GContext *ctx, int bx, int by, int trunk_h, bool flip) {
-    graphics_context_set_fill_color(ctx, C_PALM_T);
+static void draw_palm(GContext *ctx, int bx, int by, int trunk_h, bool flip,
+                      const ThemeColors *tc) {
+    graphics_context_set_fill_color(ctx, GCA(tc->landmark1));
     for (int i = 0; i < trunk_h; i++) {
         int lean = flip ? -(i / 6) : (i / 6);
         graphics_fill_rect(ctx, GRect(bx + lean - 1, by - i, 3, 1), 0, GCornerNone);
     }
     int tx = bx + (flip ? -(trunk_h / 6) : (trunk_h / 6));
     int ty = by - trunk_h;
-    graphics_context_set_fill_color(ctx, C_PALM_L);
+    graphics_context_set_fill_color(ctx, GCA(tc->landmark2));
     graphics_fill_circle(ctx, GPoint(tx,     ty - 5), 6);
     graphics_fill_circle(ctx, GPoint(tx - 8, ty - 1), 5);
     graphics_fill_circle(ctx, GPoint(tx + 8, ty - 1), 5);
@@ -215,10 +319,10 @@ static void draw_palm(GContext *ctx, int bx, int by, int trunk_h, bool flip) {
 }
 
 static void draw_neon_bar(GContext *ctx, int x, int y, int w, int h,
-                           int current, int total, GColor fill, GColor glow) {
+                           int current, int total, GColor fill, GColor glow, GColor bg) {
     graphics_context_set_fill_color(ctx, glow);
     graphics_fill_rect(ctx, GRect(x-1, y-1, w+2, h+2), 2, GCornersAll);
-    graphics_context_set_fill_color(ctx, C_BAR_BG);
+    graphics_context_set_fill_color(ctx, bg);
     graphics_fill_rect(ctx, GRect(x, y, w, h), 2, GCornersAll);
     if (total > 0 && current > 0) {
         int fw = (current * w) / total;
@@ -243,92 +347,112 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int h = bounds.size.h;
     GFont f18  = fonts_get_system_font(FONT_KEY_GOTHIC_18);
     GFont f18b = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+    const ThemeColors *tc = prv_theme();
+
+    // One-day mode: no overnight stops configured
+    bool one_day = (s_sa.day_distances[1] == 0 &&
+                    s_sa.day_distances[2] == 0 &&
+                    s_sa.day_distances[3] == 0 &&
+                    s_sa.day_distances[4] == 0);
 
     // 1. Sky gradient
-    draw_sky(ctx, w);
+    draw_sky(ctx, w, tc);
 
-    // 2. Retrowave sun (sits behind time display)
-    draw_sun(ctx);
+    // 2. Sun
+    draw_sun(ctx, tc);
 
     // 3. Battery bar (top 3px)
     draw_battery(ctx, w);
 
     // 4. Road surface fill
-    graphics_context_set_fill_color(ctx, C_ROAD);
+    graphics_context_set_fill_color(ctx, GCA(tc->road));
     graphics_fill_rect(ctx, GRect(0, HORIZON_Y, w, h - HORIZON_Y), 0, GCornerNone);
 
     // 5. Perspective grid
-    draw_grid(ctx, w, h, s_drive_offset);
+    draw_grid(ctx, w, h, s_drive_offset, tc);
 
-    // 6. Horizon line (2px bright pink)
-    graphics_context_set_stroke_color(ctx, C_HORIZON);
+    // 6. Horizon line (2px)
+    graphics_context_set_stroke_color(ctx, GCA(tc->horizon));
     graphics_draw_line(ctx, GPoint(0, HORIZON_Y),   GPoint(w, HORIZON_Y));
     graphics_draw_line(ctx, GPoint(0, HORIZON_Y+1), GPoint(w, HORIZON_Y+1));
 
-    // 7. Palm trees
-    draw_palm(ctx, 16,  HORIZON_Y, 32, false);
-    draw_palm(ctx, 5,   HORIZON_Y, 22, false);
-    draw_palm(ctx, 184, HORIZON_Y, 32, true);
-    draw_palm(ctx, 195, HORIZON_Y, 22, true);
+    // 7. Landmarks
+    draw_palm(ctx, 16,  HORIZON_Y, 32, false, tc);
+    draw_palm(ctx, 5,   HORIZON_Y, 22, false, tc);
+    draw_palm(ctx, 184, HORIZON_Y, 32, true,  tc);
+    draw_palm(ctx, 195, HORIZON_Y, 22, true,  tc);
 
-    // 8. Overall Trip bar  (label Y=99 H=18, bar Y=119 H=12)
-    graphics_context_set_text_color(ctx, C_TXT_OVR);
-    graphics_draw_text(ctx, "Overall Trip", f18,
-        GRect(BAR_X, 99, 130, 18),
-        GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
-    graphics_draw_text(ctx, s_ovr_pct_buf, f18b,
-        GRect(w-52, 99, 50, 18),
-        GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);
-    draw_neon_bar(ctx, BAR_X, 119, BAR_W, BAR_H,
-                  (int)s_sa.current_distance, (int)s_sa.total_distance,
-                  C_BAR_OVR, C_BAR_OVRG);
-
-    // 9. Day bar  (label Y=133 H=18, bar Y=153 H=12)
+    // 8. Progress bars
     int day_idx = (int)s_sa.trip_day - 1;
     if (day_idx < 0) day_idx = 0;
     if (day_idx > 4) day_idx = 4;
     int day_target = (int)s_sa.day_distances[day_idx];
-    int completed  = 0;
+    int completed = 0;
     for (int i = 0; i < day_idx; i++) completed += s_sa.day_distances[i];
     int day_current = (int)s_sa.current_distance - completed;
     if (day_current < 0) day_current = 0;
 
-    graphics_context_set_text_color(ctx, C_TXT_DAY);
-    graphics_draw_text(ctx, s_day_label_buf, f18,
-        GRect(BAR_X, 133, 80, 18),
-        GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
-    graphics_draw_text(ctx, s_day_pct_buf, f18b,
-        GRect(w-52, 133, 50, 18),
-        GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);
-    draw_neon_bar(ctx, BAR_X, 153, BAR_W, BAR_H,
-                  day_current, day_target,
-                  C_BAR_DAY, C_BAR_DAYG);
+    if (one_day) {
+        // Single bar at Day position — more road visible above it
+        const char *label = (s_sa.trip_name[0] != '\0') ? s_sa.trip_name : "Your Trip";
+        graphics_context_set_text_color(ctx, GCA(tc->txt_ovr));
+        graphics_draw_text(ctx, label, f18,
+            GRect(BAR_X, 133, 130, 18),
+            GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+        graphics_draw_text(ctx, s_ovr_pct_buf, f18b,
+            GRect(w-52, 133, 50, 18),
+            GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);
+        draw_neon_bar(ctx, BAR_X, 153, BAR_W, BAR_H,
+                      (int)s_sa.current_distance, (int)s_sa.total_distance,
+                      GCA(tc->bar_ovr), GCA(tc->bar_ovr_glow), GCA(tc->bar_bg));
+    } else {
+        // Overall Trip bar  (label Y=99, bar Y=119)
+        graphics_context_set_text_color(ctx, GCA(tc->txt_ovr));
+        graphics_draw_text(ctx, "Overall Trip", f18,
+            GRect(BAR_X, 99, 130, 18),
+            GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+        graphics_draw_text(ctx, s_ovr_pct_buf, f18b,
+            GRect(w-52, 99, 50, 18),
+            GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);
+        draw_neon_bar(ctx, BAR_X, 119, BAR_W, BAR_H,
+                      (int)s_sa.current_distance, (int)s_sa.total_distance,
+                      GCA(tc->bar_ovr), GCA(tc->bar_ovr_glow), GCA(tc->bar_bg));
 
-    // Y=165–189: open road visible (24px)
+        // Day bar  (label Y=133, bar Y=153)
+        graphics_context_set_text_color(ctx, GCA(tc->txt_day));
+        graphics_draw_text(ctx, s_day_label_buf, f18,
+            GRect(BAR_X, 133, 80, 18),
+            GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+        graphics_draw_text(ctx, s_day_pct_buf, f18b,
+            GRect(w-52, 133, 50, 18),
+            GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);
+        draw_neon_bar(ctx, BAR_X, 153, BAR_W, BAR_H,
+                      day_current, day_target,
+                      GCA(tc->bar_day), GCA(tc->bar_day_glow), GCA(tc->bar_bg));
+    }
 
-    // 10. Weather bar  (Y=190 H=18, to Y=208)
+    // Y=165–189: open road visible (24px in two-bar mode, 56px in one-day mode)
+
+    // 9. Weather bar  (Y=190 H=20, to Y=210 — extra 2px prevents text clipping)
     if (s_sa.show_weather) {
-        draw_info_bar(ctx, 190, 18, w, C_BAR_BG_SOLID, GColorCyan);
-        // Center divider
-        graphics_context_set_stroke_color(ctx, GColorCyan);
-        graphics_draw_line(ctx, GPoint(w/2, 190), GPoint(w/2, 208));
-        // Left: current location
-        graphics_context_set_text_color(ctx, C_TXT_OVR);
+        draw_info_bar(ctx, 190, 20, w, GCA(tc->info1_bg), GCA(tc->info1_border));
+        graphics_context_set_stroke_color(ctx, GCA(tc->info1_border));
+        graphics_draw_line(ctx, GPoint(w/2, 190), GPoint(w/2, 210));
+        graphics_context_set_text_color(ctx, GCA(tc->txt_ovr));
         graphics_draw_text(ctx, s_weather_cur_buf, f18,
             GRect(2, 191, w/2 - 3, 18),
             GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
-        // Right: destination
-        graphics_context_set_text_color(ctx, C_TXT_DAY);
+        graphics_context_set_text_color(ctx, GCA(tc->txt_day));
         graphics_draw_text(ctx, s_weather_dst_buf, f18,
             GRect(w/2 + 2, 191, w/2 - 3, 18),
             GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
     }
 
-    // 11. Route bar  (Y=208 H=20, fills to bottom Y=228, covers any road lines)
-    draw_info_bar(ctx, 208, 20, w, C_BAR_BG_SOLID2, GColorMagenta);
+    // 10. Route bar  (Y=210 H=18, fills to screen bottom Y=228)
+    draw_info_bar(ctx, 210, 18, w, GCA(tc->info2_bg), GCA(tc->info2_border));
     graphics_context_set_text_color(ctx, C_TXT_WHT);
     graphics_draw_text(ctx, s_route_buf, f18,
-        GRect(2, 209, w-4, 18),
+        GRect(2, 211, w-4, 17),
         GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 }
 
@@ -453,6 +577,10 @@ static void start_drive_anim(void) {
 
 // === ACCELEROMETER ===
 static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
+    static time_t s_last_tap_time = 0;
+    time_t now = time(NULL);
+    if (now - s_last_tap_time < 15) return;
+    s_last_tap_time = now;
     start_drive_anim();
     if (s_sa.show_weather) send_weather_request();
     update_progress();
@@ -552,6 +680,7 @@ static void inbox_received(DictionaryIterator *iterator, void *context) {
     RI32(CurrentDistance, s_sa.current_distance)
     RI8(ProgressUnit,    s_sa.progress_unit)
     RI8(TripDay,         s_sa.trip_day)
+    RI8(Theme,           s_sa.theme)
     RB(ShowWeather,      s_sa.show_weather)
     RB(TempUnit,         s_sa.temp_unit_f)
 
@@ -600,11 +729,11 @@ static void window_load(Window *window) {
     text_layer_set_text_alignment(s_leg_layer, GTextAlignmentCenter);
     layer_add_child(wl, text_layer_get_layer(s_leg_layer));
 
-    // Time — Y=52, H=43, bottom of sky above horizon (97), LECO_38
-    s_time_layer = text_layer_create(GRect(0, 52, w, 43));
+    // Time — Y=48, H=47, bottom at Y=95 (just above horizon at 97), LECO_42 (~10% larger)
+    s_time_layer = text_layer_create(GRect(0, 48, w, 47));
     text_layer_set_background_color(s_time_layer, GColorClear);
     text_layer_set_text_color(s_time_layer, GColorWhite);
-    text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_LECO_38_BOLD_NUMBERS));
+    text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS));
     text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
     layer_add_child(wl, text_layer_get_layer(s_time_layer));
 

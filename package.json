@@ -22,7 +22,7 @@
       "TripName", "StartName", "DestName",
       "Waypoint1", "Waypoint2", "Waypoint3", "Waypoint4", "Waypoint5",
       "CurrentDistance", "ProgressUnit", "TripDay",
-      "ShowWeather", "TempUnit",
+      "ShowWeather", "TempUnit", "Theme",
       "CalcTotalDist",
       "CalcDayDist1", "CalcDayDist2", "CalcDayDist3", "CalcDayDist4", "CalcDayDist5",
       "ResetData"
