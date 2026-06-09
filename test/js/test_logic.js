@@ -402,6 +402,182 @@ test('PKD: at Denver exactly → Day 2, near total distance', function() {
         'at Denver → near total distance (' + totalMiles + ' mi), got ' + result.distance);
 });
 
+/* ---- */
+console.log('\n[Photon geocoder response format]');
+
+/*
+ * Photon (photon.komoot.io) returns GeoJSON where coordinates are [longitude, latitude].
+ * Our geocodeCity function extracts coords[1] as lat and coords[0] as lon.
+ * These tests verify the extraction logic with realistic Photon responses.
+ */
+
+function parsePhotonCoords(responseText) {
+    var data = JSON.parse(responseText);
+    if (data.features && data.features.length > 0) {
+        var coords = data.features[0].geometry.coordinates; // [lon, lat]
+        return { lat: parseFloat(coords[1]), lon: parseFloat(coords[0]) };
+    }
+    return null;
+}
+
+var PHOTON_PORTSMOUTH = JSON.stringify({
+    'features': [{
+        'geometry': { 'type': 'Point', 'coordinates': [-82.9977, 38.7318] },
+        'properties': { 'name': 'Portsmouth', 'state': 'Ohio', 'country': 'United States' }
+    }]
+});
+
+var PHOTON_EMPTY = JSON.stringify({ 'features': [] });
+
+test('Photon: extracts lat correctly (index 1)', function() {
+    var result = parsePhotonCoords(PHOTON_PORTSMOUTH);
+    assert.ok(result !== null, 'should return coords');
+    assert.ok(Math.abs(result.lat - 38.7318) < 0.001,
+        'lat should be ~38.73, got ' + result.lat);
+});
+
+test('Photon: extracts lon correctly (index 0)', function() {
+    var result = parsePhotonCoords(PHOTON_PORTSMOUTH);
+    assert.ok(result !== null, 'should return coords');
+    assert.ok(Math.abs(result.lon - (-82.9977)) < 0.001,
+        'lon should be ~-82.99, got ' + result.lon);
+});
+
+test('Photon: returns null for empty features', function() {
+    var result = parsePhotonCoords(PHOTON_EMPTY);
+    assert.strictEqual(result, null, 'empty features → null');
+});
+
+test('Photon: lat/lon are NOT swapped (lon is negative for US cities)', function() {
+    var result = parsePhotonCoords(PHOTON_PORTSMOUTH);
+    assert.ok(result.lon < 0,   'US city longitude should be negative');
+    assert.ok(result.lat > 0,   'US city latitude should be positive');
+    assert.ok(result.lat < 90,  'latitude must be < 90');
+    assert.ok(result.lon > -180,'longitude must be > -180');
+});
+
+/* ---- */
+console.log('\n[sendDistances — partial geocoding failure]');
+
+test('partial failure: 2 of 3 legs succeed → should still send', function() {
+    var ls = makeLocalStorage({ progressUnit: '0' });
+    var pebble = makePebbleMock();
+    var sendDistances = makeSendDistances(ls, pebble);
+    // Day 1 and Day 2 geocoded OK, Day 3 not configured (empty leg)
+    var legs = [1094400, 896000, 0, 0, 0];  // Portsmouth→KC, KC→Denver, rest 0
+    var sent = sendDistances(legs);
+    assert.strictEqual(sent, true, 'partial success should still send');
+    assert.strictEqual(pebble.messages.length, 1);
+    var msg = pebble.messages[0];
+    assert.ok(msg['CalcTotalDist'] > 0, 'CalcTotalDist should be > 0');
+    assert.ok(msg['CalcDayDist1']  > 0, 'Day 1 leg should be > 0');
+    assert.ok(msg['CalcDayDist2']  > 0, 'Day 2 leg should be > 0');
+    assert.strictEqual(msg['CalcDayDist3'], 0, 'Day 3 unused → 0');
+});
+
+test('all legs 0 → skip send (original bug scenario)', function() {
+    var ls = makeLocalStorage({ progressUnit: '0' });
+    var pebble = makePebbleMock();
+    var sendDistances = makeSendDistances(ls, pebble);
+    var sent = sendDistances([0, 0, 0, 0, 0]);
+    assert.strictEqual(sent, false, 'all-zero should be skipped');
+    assert.strictEqual(pebble.messages.length, 0, 'no message should be sent');
+});
+
+/* ---- */
+console.log('\n[detectTripPosition — edge cases]');
+
+/* 1-day trip: Portsmouth → Portland (no overnight stops) */
+var ONE_DAY_COORDS = [
+    { lat: 38.72,  lon:  -82.99 }, // Portsmouth, OH
+    { lat: 45.52,  lon: -122.68 }  // Portland, OR
+];
+var ONE_DAY_CUM = [0, haversineMeters(38.72, -82.99, 45.52, -122.68)];
+
+function makeOneDayStore() {
+    return makeLocalStorage({
+        stopCoords:    JSON.stringify(ONE_DAY_COORDS),
+        stopCumMeters: JSON.stringify(ONE_DAY_CUM),
+        progressUnit:  '0'
+    });
+}
+
+test('1-day trip: at start → Day 1, 0 mi', function() {
+    var result = makeDetectTripPosition(makeOneDayStore())(38.72, -82.99);
+    assert.ok(result !== null);
+    assert.strictEqual(result.day, 1);
+    assert.ok(result.distance < 5, 'at start → < 5 mi');
+});
+
+test('1-day trip: at destination → Day 1, near total', function() {
+    var result = makeDetectTripPosition(makeOneDayStore())(45.52, -122.68);
+    var totalMi = Math.round(ONE_DAY_CUM[1] / 1609.344);
+    assert.ok(result !== null);
+    assert.strictEqual(result.day, 1, '1-day trip always Day 1');
+    assert.ok(result.distance >= totalMi - 5, 'at destination → near total mi');
+});
+
+test('1-day trip: intermediate position → Day 1', function() {
+    // Kansas City is roughly 55% of the way from Portsmouth to Portland
+    var result = makeDetectTripPosition(makeOneDayStore())(39.10, -94.58);
+    assert.ok(result !== null);
+    assert.strictEqual(result.day, 1, 'always Day 1 on a 1-day trip');
+    assert.ok(result.distance > 0, 'intermediate position > 0 mi');
+});
+
+test('no route cached → returns null', function() {
+    var result = makeDetectTripPosition(makeLocalStorage({}))(39.10, -84.51);
+    assert.strictEqual(result, null, 'no cached route → null');
+});
+
+test('only 1 stop cached (invalid route) → returns null', function() {
+    var ls = makeLocalStorage({
+        stopCoords:    JSON.stringify([{ lat: 38.72, lon: -82.99 }]),
+        stopCumMeters: JSON.stringify([0]),
+        progressUnit:  '0'
+    });
+    var result = makeDetectTripPosition(ls)(38.72, -82.99);
+    assert.strictEqual(result, null, 'only 1 stop → cannot determine leg → null');
+});
+
+/* ---- */
+console.log('\n[getStoredStr — additional edge cases]');
+
+test('returns empty string for key with empty-string value', function() {
+    var ls = makeLocalStorage({ startName: '' });
+    var getStoredStr = makeGetStoredStr(ls);
+    assert.strictEqual(getStoredStr('startName', 'StartName'), '', 'empty value → ""');
+});
+
+test('null fallback key also absent → empty string', function() {
+    var ls = makeLocalStorage({});
+    var getStoredStr = makeGetStoredStr(ls);
+    assert.strictEqual(getStoredStr('x', 'y'), '', 'both absent → ""');
+});
+
+/* ---- */
+console.log('\n[haversine precision]');
+
+test('haversine symmetric: A→B = B→A', function() {
+    var ab = haversineMeters(38.72, -82.99, 39.10, -94.58);
+    var ba = haversineMeters(39.10, -94.58, 38.72, -82.99);
+    assert.strictEqual(ab, ba, 'haversine must be symmetric');
+});
+
+test('haversine: equatorial degree ≈ 111.32 km', function() {
+    // 1° longitude at equator ≈ 111,320 m
+    var d = haversineMeters(0, 0, 0, 1);
+    assert.ok(d > 111000 && d < 111700,
+        'equatorial 1° expected ~111.32km, got ' + Math.round(d/1000) + 'km');
+});
+
+test('haversine: meridional degree ≈ 110.57 km', function() {
+    // 1° latitude ≈ 110,570 m (slightly less than equatorial)
+    var d = haversineMeters(0, 0, 1, 0);
+    assert.ok(d > 110000 && d < 111200,
+        'meridional 1° expected ~110.57km, got ' + Math.round(d/1000) + 'km');
+});
+
 /* ---- Summary ---- */
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed > 0 ? 1 : 0);

@@ -34,7 +34,7 @@
 #define HORIZON_Y  97
 #define BAR_X      10
 #define BAR_W      180
-#define BAR_H      10
+#define BAR_H      12
 
 // === PERSIST ===
 #define PERSIST_KEY_A  1
@@ -228,10 +228,10 @@ static void draw_neon_bar(GContext *ctx, int x, int y, int w, int h,
     }
 }
 
-// Solid info bar at a given Y, height 16px
-static void draw_info_bar(GContext *ctx, int y, int w, GColor bg, GColor border) {
+// Solid info bar at a given Y with explicit height
+static void draw_info_bar(GContext *ctx, int y, int bar_h, int w, GColor bg, GColor border) {
     graphics_context_set_fill_color(ctx, bg);
-    graphics_fill_rect(ctx, GRect(0, y, w, 16), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(0, y, w, bar_h), 0, GCornerNone);
     graphics_context_set_stroke_color(ctx, border);
     graphics_draw_line(ctx, GPoint(0, y), GPoint(w, y));
 }
@@ -241,8 +241,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     GRect bounds = layer_get_bounds(layer);
     int w = bounds.size.w;
     int h = bounds.size.h;
-    GFont f14  = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-    GFont f14b = fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
+    GFont f18  = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+    GFont f18b = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 
     // 1. Sky gradient
     draw_sky(ctx, w);
@@ -271,19 +271,19 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     draw_palm(ctx, 184, HORIZON_Y, 32, true);
     draw_palm(ctx, 195, HORIZON_Y, 22, true);
 
-    // 8. Overall Trip bar  (Y=99–125)
+    // 8. Overall Trip bar  (label Y=99 H=18, bar Y=119 H=12)
     graphics_context_set_text_color(ctx, C_TXT_OVR);
-    graphics_draw_text(ctx, "Overall Trip", f14,
-        GRect(BAR_X, 99, 120, 13),
+    graphics_draw_text(ctx, "Overall Trip", f18,
+        GRect(BAR_X, 99, 130, 18),
         GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
-    graphics_draw_text(ctx, s_ovr_pct_buf, f14b,
-        GRect(w-42, 99, 40, 13),
+    graphics_draw_text(ctx, s_ovr_pct_buf, f18b,
+        GRect(w-52, 99, 50, 18),
         GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);
-    draw_neon_bar(ctx, BAR_X, 115, BAR_W, BAR_H,
+    draw_neon_bar(ctx, BAR_X, 119, BAR_W, BAR_H,
                   (int)s_sa.current_distance, (int)s_sa.total_distance,
                   C_BAR_OVR, C_BAR_OVRG);
 
-    // 9. Day bar  (Y=128–154)
+    // 9. Day bar  (label Y=133 H=18, bar Y=153 H=12)
     int day_idx = (int)s_sa.trip_day - 1;
     if (day_idx < 0) day_idx = 0;
     if (day_idx > 4) day_idx = 4;
@@ -294,51 +294,42 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     if (day_current < 0) day_current = 0;
 
     graphics_context_set_text_color(ctx, C_TXT_DAY);
-    graphics_draw_text(ctx, s_day_label_buf, f14,
-        GRect(BAR_X, 128, 80, 13),
+    graphics_draw_text(ctx, s_day_label_buf, f18,
+        GRect(BAR_X, 133, 80, 18),
         GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
-    graphics_draw_text(ctx, s_day_pct_buf, f14b,
-        GRect(w-42, 128, 40, 13),
+    graphics_draw_text(ctx, s_day_pct_buf, f18b,
+        GRect(w-52, 133, 50, 18),
         GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);
-    draw_neon_bar(ctx, BAR_X, 144, BAR_W, BAR_H,
+    draw_neon_bar(ctx, BAR_X, 153, BAR_W, BAR_H,
                   day_current, day_target,
                   C_BAR_DAY, C_BAR_DAYG);
 
-    // Y=155–189: open road visible (35px)
+    // Y=165–189: open road visible (24px)
 
-    // 10. Weather bar  (Y=190–205, solid background)
+    // 10. Weather bar  (Y=190 H=18, to Y=208)
     if (s_sa.show_weather) {
-        draw_info_bar(ctx, 190, w, C_BAR_BG_SOLID, GColorCyan);
+        draw_info_bar(ctx, 190, 18, w, C_BAR_BG_SOLID, GColorCyan);
         // Center divider
         graphics_context_set_stroke_color(ctx, GColorCyan);
-        graphics_draw_line(ctx, GPoint(w/2, 190), GPoint(w/2, 206));
+        graphics_draw_line(ctx, GPoint(w/2, 190), GPoint(w/2, 208));
         // Left: current location
         graphics_context_set_text_color(ctx, C_TXT_OVR);
-        graphics_draw_text(ctx, s_weather_cur_buf, f14,
-            GRect(2, 191, w/2 - 4, 14),
+        graphics_draw_text(ctx, s_weather_cur_buf, f18,
+            GRect(2, 191, w/2 - 3, 18),
             GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
         // Right: destination
         graphics_context_set_text_color(ctx, C_TXT_DAY);
-        graphics_draw_text(ctx, s_weather_dst_buf, f14,
-            GRect(w/2 + 2, 191, w/2 - 4, 14),
+        graphics_draw_text(ctx, s_weather_dst_buf, f18,
+            GRect(w/2 + 2, 191, w/2 - 3, 18),
             GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
     }
 
-    // 11. Route bar  (Y=207–222, solid background)
-    draw_info_bar(ctx, 207, w, C_BAR_BG_SOLID2, GColorMagenta);
+    // 11. Route bar  (Y=208 H=20, fills to bottom Y=228, covers any road lines)
+    draw_info_bar(ctx, 208, 20, w, C_BAR_BG_SOLID2, GColorMagenta);
     graphics_context_set_text_color(ctx, C_TXT_WHT);
-    graphics_draw_text(ctx, s_route_buf, f14,
-        GRect(2, 208, w-4, 14),
+    graphics_draw_text(ctx, s_route_buf, f18,
+        GRect(2, 209, w-4, 18),
         GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
-
-    // 12. Bottom neon grid decoration (Y=223–228)
-    graphics_context_set_stroke_color(ctx, GColorCyan);
-    graphics_draw_line(ctx, GPoint(0, 223), GPoint(w, 223));
-    for (int gx = 0; gx < w; gx += 12)
-        graphics_draw_line(ctx, GPoint(gx, 223), GPoint(gx, h));
-    graphics_context_set_stroke_color(ctx, GColorMagenta);
-    for (int gx = 4; gx < w; gx += 12)
-        graphics_draw_line(ctx, GPoint(gx, 225), GPoint(gx+6, 225));
 }
 
 // === DISPLAY UPDATES ===
@@ -601,19 +592,19 @@ static void window_load(Window *window) {
     layer_set_update_proc(s_canvas_layer, canvas_update_proc);
     layer_add_child(wl, s_canvas_layer);
 
-    // Leg label — Y=3, H=14, cyan
-    s_leg_layer = text_layer_create(GRect(0, 3, w, 14));
+    // Leg label — Y=3, H=20, cyan, GOTHIC_18
+    s_leg_layer = text_layer_create(GRect(0, 3, w, 20));
     text_layer_set_background_color(s_leg_layer, GColorClear);
     text_layer_set_text_color(s_leg_layer, GColorCyan);
-    text_layer_set_font(s_leg_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+    text_layer_set_font(s_leg_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
     text_layer_set_text_alignment(s_leg_layer, GTextAlignmentCenter);
     layer_add_child(wl, text_layer_get_layer(s_leg_layer));
 
-    // Time — Y=55, bottom of sky just above horizon, LECO_36
-    s_time_layer = text_layer_create(GRect(0, 55, w, 40));
+    // Time — Y=52, H=43, bottom of sky above horizon (97), LECO_38
+    s_time_layer = text_layer_create(GRect(0, 52, w, 43));
     text_layer_set_background_color(s_time_layer, GColorClear);
     text_layer_set_text_color(s_time_layer, GColorWhite);
-    text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_LECO_36_BOLD_NUMBERS));
+    text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_LECO_38_BOLD_NUMBERS));
     text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
     layer_add_child(wl, text_layer_get_layer(s_time_layer));
 
