@@ -45,18 +45,6 @@ module.exports = [
     "items": [
       { "type": "heading", "defaultValue": "Today's Progress" },
       {
-        "type": "text",
-        "defaultValue": "Day and distance are auto-detected from GPS when you shake your wrist. Use the override below only if needed."
-      },
-      {
-        "type": "input",
-        "messageKey": "CurrentDistance",
-        "label": "Distance Override (optional)",
-        "description": "Leave 0 to use GPS auto-detection",
-        "defaultValue": "0",
-        "attributes": { "type": "number", "min": "0" }
-      },
-      {
         "type": "select",
         "messageKey": "ProgressUnit",
         "label": "Distance Units",
@@ -88,6 +76,24 @@ module.exports = [
           { "label": "Celsius (°C)", "value": 0 },
           { "label": "Fahrenheit (°F)", "value": 1 }
         ]
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      { "type": "heading", "defaultValue": "Debug / Overrides" },
+      {
+        "type": "text",
+        "defaultValue": "GPS auto-detects day and distance when you shake your wrist. Use the override only if auto-detection isn't working."
+      },
+      {
+        "type": "input",
+        "messageKey": "CurrentDistance",
+        "label": "Distance Override",
+        "description": "Set to 0 (or leave blank) to use GPS auto-detection",
+        "defaultValue": "0",
+        "attributes": { "type": "number", "min": "0" }
       }
     ]
   },

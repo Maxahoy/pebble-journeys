@@ -299,6 +299,109 @@ test('near destination → last leg day', function() {
     assert.strictEqual(result.day, FAKE_COORDS.length - 1, 'at destination → last leg day');
 });
 
+/* ---- */
+console.log('\n[detectTripPosition — Portsmouth OH → Kansas City MO → Denver CO]');
+
+/*
+ * Two-leg road trip:
+ *   Day 1: Portsmouth, OH → Kansas City, MO   (~623 mi driving; haversine ~623 mi)
+ *   Day 2: Kansas City, MO → Denver, CO        (~556 mi driving; haversine ~557 mi)
+ *
+ * Cumulative distances use haversine (straight-line) so they stay consistent
+ * without needing real OSRM data. Detection logic is tested, not OSRM values.
+ *
+ * Test positions and expected day/distance:
+ *   Cincinnati, OH  (39.10, -84.51) — Day 1, ~86 mi from start  (near Portsmouth)
+ *   St. Louis, MO   (38.63, -90.20) — Day 1, ~388 mi from start (past halfway)
+ *   Goodland, KS    (39.35,-101.71) — Day 2, ~990 mi from start (2/3 into Day 2)
+ */
+
+var PKD_COORDS = [
+    { lat: 38.72, lon:  -82.99 }, // Portsmouth, OH
+    { lat: 39.10, lon:  -94.58 }, // Kansas City, MO
+    { lat: 39.74, lon: -104.99 }  // Denver, CO
+];
+
+var PKD_CUM = (function() {
+    var d01 = haversineMeters(PKD_COORDS[0].lat, PKD_COORDS[0].lon,
+                              PKD_COORDS[1].lat, PKD_COORDS[1].lon);
+    var d12 = haversineMeters(PKD_COORDS[1].lat, PKD_COORDS[1].lon,
+                              PKD_COORDS[2].lat, PKD_COORDS[2].lon);
+    return [0, d01, d01 + d12];
+}());
+
+console.log('  Portsmouth→KC: ' + Math.round(PKD_CUM[1]/1609.344) + ' mi straight-line');
+console.log('  KC→Denver:     ' + Math.round((PKD_CUM[2]-PKD_CUM[1])/1609.344) + ' mi straight-line');
+console.log('  Total:         ' + Math.round(PKD_CUM[2]/1609.344) + ' mi straight-line');
+
+function makePkdStore() {
+    return makeLocalStorage({
+        stopCoords:    JSON.stringify(PKD_COORDS),
+        stopCumMeters: JSON.stringify(PKD_CUM),
+        progressUnit:  '0'
+    });
+}
+
+test('PKD: Portsmouth→KC haversine ≈ 600–650 mi', function() {
+    var miles = PKD_CUM[1] / 1609.344;
+    assert.ok(miles > 600 && miles < 650,
+        'Portsmouth→KC expected 600–650 mi straight-line, got ' + Math.round(miles) + ' mi');
+});
+
+test('PKD: KC→Denver haversine ≈ 530–580 mi', function() {
+    var miles = (PKD_CUM[2] - PKD_CUM[1]) / 1609.344;
+    assert.ok(miles > 530 && miles < 580,
+        'KC→Denver expected 530–580 mi straight-line, got ' + Math.round(miles) + ' mi');
+});
+
+test('PKD: Cincinnati OH → Day 1, 70–115 mi from start', function() {
+    // Cincinnati is ~90 mi NW of Portsmouth — early on Day 1
+    var detect = makeDetectTripPosition(makePkdStore());
+    var result = detect(39.10, -84.51);
+    assert.ok(result !== null, 'should detect position');
+    assert.strictEqual(result.day, 1, 'Cincinnati is on Day 1 (Portsmouth→KC leg)');
+    assert.ok(result.distance > 70 && result.distance < 115,
+        'Cincinnati expected 70–115 mi from start, got ' + result.distance + ' mi');
+});
+
+test('PKD: St. Louis MO → Day 1, 350–430 mi from start', function() {
+    // St. Louis is past the midpoint of the Portsmouth→KC leg
+    var detect = makeDetectTripPosition(makePkdStore());
+    var result = detect(38.63, -90.20);
+    assert.ok(result !== null, 'should detect position');
+    assert.strictEqual(result.day, 1, 'St. Louis is on Day 1 (Portsmouth→KC leg)');
+    assert.ok(result.distance > 350 && result.distance < 430,
+        'St. Louis expected 350–430 mi from start, got ' + result.distance + ' mi');
+});
+
+test('PKD: Goodland KS → Day 2, 940–1060 mi from start', function() {
+    // Goodland, KS is roughly 2/3 of the way through the KC→Denver leg
+    var detect = makeDetectTripPosition(makePkdStore());
+    var result = detect(39.35, -101.71);
+    assert.ok(result !== null, 'should detect position');
+    assert.strictEqual(result.day, 2, 'Goodland is on Day 2 (KC→Denver leg)');
+    assert.ok(result.distance > 940 && result.distance < 1060,
+        'Goodland expected 940–1060 mi from start, got ' + result.distance + ' mi');
+});
+
+test('PKD: at Portsmouth exactly → Day 1, 0 mi', function() {
+    var detect = makeDetectTripPosition(makePkdStore());
+    var result = detect(38.72, -82.99);
+    assert.ok(result !== null);
+    assert.strictEqual(result.day, 1, 'at start → Day 1');
+    assert.ok(result.distance < 5, 'at Portsmouth → < 5 mi from start');
+});
+
+test('PKD: at Denver exactly → Day 2, near total distance', function() {
+    var detect = makeDetectTripPosition(makePkdStore());
+    var totalMiles = Math.round(PKD_CUM[2] / 1609.344);
+    var result = detect(39.74, -104.99);
+    assert.ok(result !== null);
+    assert.strictEqual(result.day, 2, 'at destination → last day');
+    assert.ok(result.distance >= totalMiles - 5,
+        'at Denver → near total distance (' + totalMiles + ' mi), got ' + result.distance);
+});
+
 /* ---- Summary ---- */
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed > 0 ? 1 : 0);

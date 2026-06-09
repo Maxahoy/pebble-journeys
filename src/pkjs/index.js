@@ -38,18 +38,20 @@ function syncSettingsFromClay() {
     }
 }
 
-// ---- Geocoding (Nominatim / OpenStreetMap) ----
+// ---- Geocoding (Photon by Komoot — OSM data, no API key, no User-Agent gate) ----
+// Nominatim was replaced because it rejects requests without a valid User-Agent
+// header, which Pebble JS cannot set. Photon has the same OSM data with no such
+// restriction. GeoJSON coordinates are [longitude, latitude] order.
 function geocodeCity(name, callback) {
     if (!name || name.trim() === '') { callback(null, null); return; }
-    var url = 'https://nominatim.openstreetmap.org/search?' +
-              'q=' + encodeURIComponent(name.trim()) +
-              '&format=json&limit=1&addressdetails=0';
+    var url = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(name.trim()) + '&limit=1';
     xhrGet(url, function(response) {
         if (!response) { callback(null, null); return; }
         try {
-            var results = JSON.parse(response);
-            if (results && results.length > 0) {
-                callback(parseFloat(results[0].lat), parseFloat(results[0].lon));
+            var data = JSON.parse(response);
+            if (data.features && data.features.length > 0) {
+                var coords = data.features[0].geometry.coordinates; // [lon, lat]
+                callback(parseFloat(coords[1]), parseFloat(coords[0]));
             } else {
                 console.log('No geocode result for: ' + name);
                 callback(null, null);
