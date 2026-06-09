@@ -13,37 +13,29 @@ function xhrGet(url, callback) {
 }
 
 // ---- Sync Clay settings to our localStorage keys at startup ----
-// Clay stores config in localStorage; try several possible formats.
+// Clay flattens all settings (extracting .value from each) and stores the result
+// in localStorage under 'clay-settings' (with a hyphen). Values are plain strings/numbers.
 function syncSettingsFromClay() {
-    // Format 1: Clay stores a JSON blob under 'clay_settings'
     try {
-        var raw = localStorage.getItem('clay_settings');
-        if (raw) {
-            var s = JSON.parse(raw);
-            if (s['StartName']) localStorage.setItem('startName', s['StartName']);
-            if (s['DestName'])  localStorage.setItem('destName',  s['DestName']);
-            for (var i = 1; i <= 5; i++) {
-                var k = 'Waypoint' + i;
-                if (s[k]) localStorage.setItem('waypoint' + i, s[k]);
-            }
-            if (s['ProgressUnit'] !== undefined) localStorage.setItem('progressUnit', '' + s['ProgressUnit']);
-            if (s['TempUnit']     !== undefined) localStorage.setItem('tempUnit',     '' + s['TempUnit']);
-            if (s['ShowWeather']  !== undefined) localStorage.setItem('showWeather',  '' + s['ShowWeather']);
+        var raw = localStorage.getItem('clay-settings');
+        if (!raw) {
+            console.log('syncSettingsFromClay: clay-settings not found');
+            return;
         }
-    } catch(e) {}
-
-    // Format 2: Clay stores each messageKey directly (some versions do this)
-    function tryKey(clayKey, ourKey) {
-        var v = localStorage.getItem(clayKey);
-        if (v !== null && v !== '' && !localStorage.getItem(ourKey)) {
-            localStorage.setItem(ourKey, v);
+        var s = JSON.parse(raw);
+        if (s['StartName']) localStorage.setItem('startName', '' + s['StartName']);
+        if (s['DestName'])  localStorage.setItem('destName',  '' + s['DestName']);
+        for (var i = 1; i <= 5; i++) {
+            var k = 'Waypoint' + i;
+            if (s[k]) localStorage.setItem('waypoint' + i, '' + s[k]);
         }
+        if (s['ProgressUnit'] !== undefined) localStorage.setItem('progressUnit', '' + s['ProgressUnit']);
+        if (s['TempUnit']     !== undefined) localStorage.setItem('tempUnit',     '' + s['TempUnit']);
+        if (s['ShowWeather']  !== undefined) localStorage.setItem('showWeather',  '' + s['ShowWeather']);
+        console.log('syncSettingsFromClay: start=' + s['StartName'] + ' dest=' + s['DestName']);
+    } catch(e) {
+        console.log('syncSettingsFromClay error: ' + e);
     }
-    tryKey('StartName', 'startName');
-    tryKey('DestName',  'destName');
-    for (var j = 1; j <= 5; j++) tryKey('Waypoint' + j, 'waypoint' + j);
-    tryKey('ProgressUnit', 'progressUnit');
-    tryKey('TempUnit', 'tempUnit');
 }
 
 // ---- Geocoding (Nominatim / OpenStreetMap) ----
@@ -440,22 +432,27 @@ Pebble.addEventListener('ready', function() {
 });
 
 // Intercept Clay's webviewclosed to extract settings for pkjs use.
-// Clay adds its own handler too; both fire independently.
+// Clay's own handler runs first (registered in the Clay constructor above), calls
+// getSettings() which extracts .value from each raw setting object and stores the
+// result as plain strings/numbers in localStorage['clay-settings'].
+// We read from clay-settings so we get those plain values, not the raw objects.
 Pebble.addEventListener('webviewclosed', function(e) {
     if (!e.response) return;
     try {
-        var settings = JSON.parse(decodeURIComponent(e.response));
-        if (settings['StartName'] !== undefined) localStorage.setItem('startName', settings['StartName']);
-        if (settings['DestName']  !== undefined) localStorage.setItem('destName',  settings['DestName']);
+        var raw = localStorage.getItem('clay-settings');
+        if (!raw) return;
+        var settings = JSON.parse(raw);
+        if (settings['StartName'] !== undefined) localStorage.setItem('startName', '' + settings['StartName']);
+        if (settings['DestName']  !== undefined) localStorage.setItem('destName',  '' + settings['DestName']);
         for (var i = 1; i <= 5; i++) {
             var key = 'Waypoint' + i;
-            if (settings[key] !== undefined) localStorage.setItem('waypoint' + i, settings[key]);
+            if (settings[key] !== undefined) localStorage.setItem('waypoint' + i, '' + settings[key]);
         }
         if (settings['ProgressUnit'] !== undefined) localStorage.setItem('progressUnit', '' + settings['ProgressUnit']);
         if (settings['TempUnit']     !== undefined) localStorage.setItem('tempUnit',     '' + settings['TempUnit']);
         if (settings['ShowWeather']  !== undefined) localStorage.setItem('showWeather',  '' + settings['ShowWeather']);
 
-        console.log('Clay settings synced: dest=' + (settings['DestName'] || 'not set'));
+        console.log('Clay settings synced: start=' + settings['StartName'] + ' dest=' + settings['DestName']);
         calculateTripDistances();
         fetchBothWeather();
     } catch(ex) {
