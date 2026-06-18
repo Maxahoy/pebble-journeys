@@ -150,10 +150,29 @@ static const ThemeColors s_themes[7] = {
 };
 
 // === LAYOUT ===
-#define HORIZON_Y  97
-#define BAR_X      10
-#define BAR_W      180
-#define BAR_H      12
+// PBL_ROUND is defined by the Pebble SDK for all round-display platforms (chalk, gabbro, …)
+#ifdef PBL_ROUND
+  #define IS_ROUND  1
+  #define HORIZON_Y 76
+  #define ROAD_H    104   // h(180) - HORIZON_Y(76)
+#else
+  #define IS_ROUND  0
+  #define HORIZON_Y 97
+  #define ROAD_H    131   // h(228) - HORIZON_Y(97)
+#endif
+#define BAR_X  10
+#define BAR_W  180
+#define BAR_H  12
+
+// Sky gradient band Y boundaries and road perspective row spacings — platform-specific.
+// Moved to file scope so #if can select between them at compile time.
+#if IS_ROUND
+static const uint8_t k_band_y[]  = {11, 22, 35, 48, 60, 70, 76};
+static const uint8_t k_base_dy[] = { 6, 13, 21, 30, 42, 56, 72, 92};
+#else
+static const uint8_t k_band_y[]  = {14, 28, 44, 60, 76, 88, 97};
+static const uint8_t k_base_dy[] = { 8, 16, 26, 38, 53, 71, 92, 116};
+#endif
 
 // === PERSIST ===
 #define PERSIST_KEY_A  1
@@ -263,17 +282,20 @@ static void prv_save_settings(void) {
 // === DRAW HELPERS ===
 
 static void draw_sky(GContext *ctx, int w, const ThemeColors *tc) {
-    static const uint8_t band_y[] = {14, 28, 44, 60, 76, 88, 97};
     int prev = 0;
     for (int i = 0; i < 7; i++) {
         graphics_context_set_fill_color(ctx, GCA(tc->sky[i]));
-        graphics_fill_rect(ctx, GRect(0, prev, w, band_y[i] - prev), 0, GCornerNone);
-        prev = band_y[i];
+        graphics_fill_rect(ctx, GRect(0, prev, w, k_band_y[i] - prev), 0, GCornerNone);
+        prev = k_band_y[i];
     }
 }
 
 static void draw_sun(GContext *ctx, const ThemeColors *tc) {
+#if IS_ROUND
+    int cx = 90, cy = 42, r = 28;
+#else
     int cx = 100, cy = 47, r = 28;
+#endif
     graphics_context_set_fill_color(ctx, GCA(tc->sun_fill));
     graphics_fill_circle(ctx, GPoint(cx, cy), r);
     static const uint8_t hw[] = {28,27,27,26,25,23,21,18,14,7};
@@ -314,10 +336,9 @@ static void draw_grid(GContext *ctx, int w, int h, int offset, const ThemeColors
     }
 
     // Scrolling horizontal lines
-    static const uint8_t base_dy[] = {8, 16, 26, 38, 53, 71, 92, 116};
     for (int i = 0; i < 8; i++) {
         int scroll = (offset * (i + 2)) % road_h;
-        int dy = (base_dy[i] + scroll) % road_h;
+        int dy = (k_base_dy[i] + scroll) % road_h;
         if (dy == 0) dy = 1;
         int y = vy + dy;
         if (y >= h) continue;
@@ -363,10 +384,17 @@ static void draw_mountain_peak(GContext *ctx, int px, int py, int base_half,
 
 static void draw_mountain_peaks(GContext *ctx, const ThemeColors *tc) {
     GColor rock = GCA(tc->landmark1), snow = GCA(tc->landmark2);
-    draw_mountain_peak(ctx,  22, 62, 32, rock, snow);   // left foreground
-    draw_mountain_peak(ctx,  -4, 72, 20, rock, snow);   // left background
-    draw_mountain_peak(ctx, 178, 62, 32, rock, snow);   // right foreground
-    draw_mountain_peak(ctx, 204, 72, 20, rock, snow);   // right background
+#if IS_ROUND
+    draw_mountain_peak(ctx,  20, 50, 32, rock, snow);
+    draw_mountain_peak(ctx,  -4, 60, 20, rock, snow);
+    draw_mountain_peak(ctx, 160, 50, 32, rock, snow);
+    draw_mountain_peak(ctx, 184, 60, 20, rock, snow);
+#else
+    draw_mountain_peak(ctx,  22, 62, 32, rock, snow);
+    draw_mountain_peak(ctx,  -4, 72, 20, rock, snow);
+    draw_mountain_peak(ctx, 178, 62, 32, rock, snow);
+    draw_mountain_peak(ctx, 204, 72, 20, rock, snow);
+#endif
 }
 
 // Pine/evergreen: triangular body with snow on upper third
@@ -390,19 +418,33 @@ static void draw_evergreen(GContext *ctx, int bx, int by, int h,
 }
 
 static void draw_evergreens(GContext *ctx, const ThemeColors *tc) {
+#if IS_ROUND
+    draw_evergreen(ctx, 13, HORIZON_Y, 36, tc);
+    draw_evergreen(ctx, 27, HORIZON_Y, 26, tc);
+    draw_evergreen(ctx, 163, HORIZON_Y, 36, tc);
+    draw_evergreen(ctx, 173, HORIZON_Y, 26, tc);
+#else
     draw_evergreen(ctx, 14, HORIZON_Y, 36, tc);
     draw_evergreen(ctx, 30, HORIZON_Y, 26, tc);
     draw_evergreen(ctx, 182, HORIZON_Y, 36, tc);
     draw_evergreen(ctx, 192, HORIZON_Y, 26, tc);
+#endif
 }
 
 // City skyscrapers with lit windows
 static void draw_buildings(GContext *ctx, const ThemeColors *tc) {
     // int16_t required: x values > 127 overflow int8_t
+#if IS_ROUND
+    static const int16_t bldgs[][3] = {
+        {2, 14, 50}, {14, 10, 62}, {23, 13, 44},
+        {124, 9, 52}, {137, 13, 58}, {148, 14, 70}, {160, 12, 44}, {171, 7, 56}
+    };
+#else
     static const int16_t bldgs[][3] = {
         {2, 16, 50}, {16, 11, 62}, {26, 14, 44},
         {138, 10, 52}, {152, 14, 58}, {164, 16, 70}, {178, 13, 44}, {190, 8, 56}
     };
+#endif
     for (int i = 0; i < 8; i++) {
         int bx = bldgs[i][0], bw = bldgs[i][1], bh = bldgs[i][2];
         int by = HORIZON_Y - bh;
@@ -420,7 +462,12 @@ static void draw_buildings(GContext *ctx, const ThemeColors *tc) {
 
 // Wildflowers: stems + dot blooms along the horizon
 static void draw_flowers(GContext *ctx, const ThemeColors *tc) {
-    static const int8_t fx[] = {7, 17, 27, 39, 52, 149, 162, 172, 183, 193};
+    // uint8_t required: right-side values (134-193) exceed int8_t's max of 127
+#if IS_ROUND
+    static const uint8_t fx[] = {6, 15, 24, 35, 47, 134, 146, 155, 165, 174};
+#else
+    static const uint8_t fx[] = {7, 17, 27, 39, 52, 149, 162, 172, 183, 193};
+#endif
     graphics_context_set_stroke_color(ctx, GCA(tc->landmark1));
     for (int i = 0; i < 10; i++) {
         graphics_draw_line(ctx, GPoint(fx[i], HORIZON_Y),
@@ -458,8 +505,13 @@ static void draw_umbrella(GContext *ctx, int bx, int by, const ThemeColors *tc) 
 }
 
 static void draw_beach_umbrellas(GContext *ctx, const ThemeColors *tc) {
+#if IS_ROUND
+    draw_umbrella(ctx, 18, HORIZON_Y, tc);
+    draw_umbrella(ctx, 162, HORIZON_Y, tc);
+#else
     draw_umbrella(ctx, 20, HORIZON_Y, tc);
     draw_umbrella(ctx, 184, HORIZON_Y, tc);
+#endif
 }
 
 // Saguaro cactus: trunk + two arms with upward tips
@@ -475,10 +527,17 @@ static void draw_cactus(GContext *ctx, int bx, int by, int h, const ThemeColors 
 }
 
 static void draw_cacti(GContext *ctx, const ThemeColors *tc) {
+#if IS_ROUND
+    draw_cactus(ctx,  8, HORIZON_Y, 26, tc);
+    draw_cactus(ctx, 22, HORIZON_Y, 38, tc);
+    draw_cactus(ctx, 160, HORIZON_Y, 35, tc);
+    draw_cactus(ctx, 174, HORIZON_Y, 24, tc);
+#else
     draw_cactus(ctx,  9, HORIZON_Y, 26, tc);
     draw_cactus(ctx, 24, HORIZON_Y, 38, tc);
     draw_cactus(ctx, 178, HORIZON_Y, 35, tc);
     draw_cactus(ctx, 193, HORIZON_Y, 24, tc);
+#endif
 }
 
 // Dispatch the correct landmark for the active theme
@@ -487,10 +546,17 @@ static void draw_landmark(GContext *ctx, const ThemeColors *tc) {
     if (t < 0 || t >= 7) t = 0;
     switch (t) {
         case 0:   // Vaporwave — palms
+#if IS_ROUND
+            draw_palm(ctx, 14, HORIZON_Y, 32, false, tc);
+            draw_palm(ctx,  4, HORIZON_Y, 22, false, tc);
+            draw_palm(ctx, 166, HORIZON_Y, 32, true,  tc);
+            draw_palm(ctx, 175, HORIZON_Y, 22, true,  tc);
+#else
             draw_palm(ctx, 16,  HORIZON_Y, 32, false, tc);
             draw_palm(ctx,  5,  HORIZON_Y, 22, false, tc);
             draw_palm(ctx, 184, HORIZON_Y, 32, true,  tc);
             draw_palm(ctx, 195, HORIZON_Y, 22, true,  tc);
+#endif
             break;
         case 1: draw_beach_umbrellas(ctx, tc);  break;
         case 2: draw_mountain_peaks(ctx, tc);   break;
@@ -501,6 +567,7 @@ static void draw_landmark(GContext *ctx, const ThemeColors *tc) {
     }
 }
 
+#if !IS_ROUND
 static void draw_neon_bar(GContext *ctx, int x, int y, int w, int h,
                            int current, int total, GColor fill, GColor glow, GColor bg) {
     graphics_context_set_fill_color(ctx, glow);
@@ -514,6 +581,30 @@ static void draw_neon_bar(GContext *ctx, int x, int y, int w, int h,
         graphics_fill_rect(ctx, GRect(x, y, fw, h), 2, GCornersAll);
     }
 }
+#endif  // !IS_ROUND
+
+// Arc progress bar for round displays: background ring then proportional fill with neon glow
+#if IS_ROUND
+static void draw_arc_bar(GContext *ctx, GRect bounds, int angle_start_deg, int angle_end_deg,
+                         int current, int total, GColor fill, GColor glow, GColor bg) {
+    int32_t a0 = DEG_TO_TRIGANGLE(angle_start_deg);
+    int32_t a1 = DEG_TO_TRIGANGLE(angle_end_deg);
+    graphics_context_set_fill_color(ctx, bg);
+    graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, 14, a0, a1);
+    if (total > 0 && current > 0) {
+        int span = angle_end_deg - angle_start_deg;
+        int filled_deg = (current * span) / total;
+        if (filled_deg > span) filled_deg = span;
+        int32_t a_fill = DEG_TO_TRIGANGLE(angle_start_deg + filled_deg);
+        // Glow: slightly wider ring blooms inward from the fill
+        graphics_context_set_fill_color(ctx, glow);
+        graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, 16, a0, a_fill);
+        // Sharp fill on top
+        graphics_context_set_fill_color(ctx, fill);
+        graphics_fill_radial(ctx, bounds, GOvalScaleModeFitCircle, 14, a0, a_fill);
+    }
+}
+#endif
 
 // Solid info bar at a given Y with explicit height
 static void draw_info_bar(GContext *ctx, int y, int bar_h, int w, GColor bg, GColor border) {
@@ -529,15 +620,16 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int w = bounds.size.w;
     int h = bounds.size.h;
     GFont f18  = fonts_get_system_font(FONT_KEY_GOTHIC_18);
-    GFont f18b = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
     const ThemeColors *tc = prv_theme();
-
+#if !IS_ROUND
+    GFont f18b = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
     // One-day mode: no overnight stops configured
     bool one_day = (s_sa.day_distances[1] == 0 &&
                     s_sa.day_distances[2] == 0 &&
                     s_sa.day_distances[3] == 0 &&
                     s_sa.day_distances[4] == 0 &&
                     s_sa.day_distances[5] == 0);
+#endif
 
     // 1. Sky gradient
     draw_sky(ctx, w, tc);
@@ -566,14 +658,19 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     // 7b. Clock shadow/outline — drawn in canvas so TextLayer renders on top
     if (tc->txt_time_shadow) {
         GFont f42 = fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS);
+#if IS_ROUND
+        int clk_y = 38;
+#else
+        int clk_y = 48;
+#endif
         graphics_context_set_text_color(ctx, GCA(tc->txt_time_shadow));
-        graphics_draw_text(ctx, s_time_buf, f42, GRect(-1, 48, w+2, 47),
+        graphics_draw_text(ctx, s_time_buf, f42, GRect(-1, clk_y, w+2, 47),
             GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-        graphics_draw_text(ctx, s_time_buf, f42, GRect(1, 48, w+2, 47),
+        graphics_draw_text(ctx, s_time_buf, f42, GRect(1, clk_y, w+2, 47),
             GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-        graphics_draw_text(ctx, s_time_buf, f42, GRect(0, 47, w, 47),
+        graphics_draw_text(ctx, s_time_buf, f42, GRect(0, clk_y-1, w, 47),
             GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-        graphics_draw_text(ctx, s_time_buf, f42, GRect(0, 49, w, 47),
+        graphics_draw_text(ctx, s_time_buf, f42, GRect(0, clk_y+1, w, 47),
             GTextOverflowModeFill, GTextAlignmentCenter, NULL);
     }
 
@@ -587,6 +684,27 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int day_current = (int)s_sa.current_distance - completed;
     if (day_current < 0) day_current = 0;
 
+#if IS_ROUND
+    // Round: arc bars along left side (Day) and right side (Trip), 120° sweep each
+    {
+        GRect arc_bounds = GRect(5, 5, 170, 170);
+        GFont f14 = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+        draw_arc_bar(ctx, arc_bounds, 210, 330, day_current, day_target,
+                     GCA(tc->bar_day), GCA(tc->bar_day_glow), GCA(tc->bar_bg));
+        draw_arc_bar(ctx, arc_bounds, 30, 150,
+                     (int)s_sa.current_distance, (int)s_sa.total_distance,
+                     GCA(tc->bar_ovr), GCA(tc->bar_ovr_glow), GCA(tc->bar_bg));
+        // Percentage labels at 9 o'clock (left arc) and 3 o'clock (right arc)
+        graphics_context_set_text_color(ctx, GCA(tc->txt_day));
+        graphics_draw_text(ctx, s_day_pct_buf, f14,
+            GRect(0, h/2 - 8, 24, 16),
+            GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+        graphics_context_set_text_color(ctx, GCA(tc->txt_ovr));
+        graphics_draw_text(ctx, s_ovr_pct_buf, f14,
+            GRect(w - 24, h/2 - 8, 24, 16),
+            GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+    }
+#else
     if (one_day) {
         // Single bar at Day position — more road visible above it
         const char *label = (s_sa.trip_name[0] != '\0') ? s_sa.trip_name : "Your Trip";
@@ -625,9 +743,38 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
                       (int)s_sa.current_distance, (int)s_sa.total_distance,
                       GCA(tc->bar_ovr), GCA(tc->bar_ovr_glow), GCA(tc->bar_bg));
     }
+#endif
 
-    // Y=165–187: open road visible (22px in two-bar mode, 54px in one-day mode)
+    // Y=165–187: open road visible (22px in two-bar mode, 54px in one-day mode) [emery only]
 
+#if IS_ROUND
+    // 9. Round info bars: raised to fit inside the circular display
+    // At Y=130, usable width ≈ 160px; at Y=150, ≈ 134px — centered text handles this.
+    if (s_sa.show_weather) {
+        draw_info_bar(ctx, 130, 18, w, GCA(tc->info1_bg), GCA(tc->info1_border));
+        graphics_context_set_stroke_color(ctx, GCA(tc->info1_border));
+        graphics_draw_line(ctx, GPoint(w/2, 130), GPoint(w/2, 148));
+        graphics_context_set_text_color(ctx, GCA(tc->txt_ovr));
+        graphics_draw_text(ctx, s_weather_cur_buf, f18,
+            GRect(2, 130, w/2 - 3, 18),
+            GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+        graphics_context_set_text_color(ctx, GCA(tc->txt_day));
+        graphics_draw_text(ctx, s_weather_dst_buf, f18,
+            GRect(w/2 + 2, 130, w/2 - 4, 18),
+            GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);
+    }
+    // 10. Route bar
+    draw_info_bar(ctx, 150, 15, w, GCA(tc->info2_bg), GCA(tc->info2_border));
+    graphics_context_set_text_color(ctx, C_TXT_WHT);
+    graphics_draw_text(ctx, s_route_buf, f18,
+        GRect(2, 149, w - 4, 18),
+        GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+
+    // 11. Theme-colored ring accent around the watch face perimeter
+    graphics_context_set_stroke_color(ctx, GCA(tc->horizon));
+    graphics_context_set_stroke_width(ctx, 4);
+    graphics_draw_circle(ctx, GPoint(w/2, h/2), w/2 - 2);
+#else
     // 9. Weather bar  (Y=188 H=20, to Y=208)
     if (s_sa.show_weather) {
         draw_info_bar(ctx, 188, 20, w, GCA(tc->info1_bg), GCA(tc->info1_border));
@@ -649,6 +796,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_draw_text(ctx, s_route_buf, f18,
         GRect(2, 207, w-4, 18),
         GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+#endif
 }
 
 // === DISPLAY UPDATES ===
@@ -757,7 +905,7 @@ static void anim_timer_callback(void *data) {
     s_anim_timer = NULL;
     if (s_drive_frame <= 0) return;
     s_drive_frame--;
-    s_drive_offset = (s_drive_offset + 7) % 131;
+    s_drive_offset = (s_drive_offset + 7) % ROAD_H;
     if (s_drive_frame > 0) {
         s_anim_timer = app_timer_register(100, anim_timer_callback, NULL);
     }
@@ -779,7 +927,6 @@ static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
     start_drive_anim();
     if (s_sa.show_weather) send_weather_request();
     update_progress();
-    vibes_short_pulse();
 }
 
 // === BATTERY ===
@@ -936,8 +1083,12 @@ static void window_load(Window *window) {
     text_layer_set_text_alignment(s_leg_layer, GTextAlignmentCenter);
     layer_add_child(wl, text_layer_get_layer(s_leg_layer));
 
-    // Time — Y=48, H=47, bottom at Y=95 (just above horizon at 97), LECO_42 (~10% larger)
+    // Time — positioned just above horizon; IS_ROUND shifts up to match HORIZON_Y=76
+#if IS_ROUND
+    s_time_layer = text_layer_create(GRect(0, 38, w, 47));
+#else
     s_time_layer = text_layer_create(GRect(0, 48, w, 47));
+#endif
     text_layer_set_background_color(s_time_layer, GColorClear);
     text_layer_set_text_color(s_time_layer, GColorWhite);
     text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS));

@@ -12,7 +12,7 @@
     "uuid": "c92d8c3e-d2f5-4e90-aae5-6f9b290161bc",
     "sdkVersion": "3",
     "enableMultiJS": true,
-    "targetPlatforms": ["emery"],
+    "targetPlatforms": ["emery", "gabbro"],
     "watchapp": { "watchface": true },
     "capabilities": ["configurable", "location"],
     "messageKeys": [
