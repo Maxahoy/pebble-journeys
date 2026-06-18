@@ -160,19 +160,20 @@ static const ThemeColors s_themes[7] = {
 #define PERSIST_KEY_B  2
 
 // === SETTINGS STRUCTS ===
-// sizeof(TripSettingsA) ≈ 116 bytes — safe under 256
+// sizeof(TripSettingsA) ≈ 122 bytes — safe under 256
 typedef struct {
     char    trip_name[24];
     char    start_name[20];
     char    dest_name[20];
     int32_t total_distance;
-    int32_t day_distances[5];
+    int32_t day_distances[6];
     int32_t current_distance;
-    int8_t  progress_unit;   // 0=mi, 1=km, 2=%
+    int8_t  progress_unit;   // 0=mi, 1=km
     int8_t  trip_day;        // 1–6
     bool    show_weather;
     bool    temp_unit_f;
     int8_t  theme;        // 0=Vaporwave 1=Beach 2=Mountain 3=Winter 4=City 5=Plains 6=Desert
+    bool    show_battery; // placed last to avoid disturbing persisted field offsets
 } TripSettingsA;
 
 // sizeof(TripSettingsB) ≈ 104 bytes
@@ -239,6 +240,7 @@ static void prv_default_settings(void) {
     s_sa.show_weather     = true;
     s_sa.temp_unit_f      = false;
     s_sa.theme            = 0;
+    s_sa.show_battery     = true;
     s_sb.cached_temp_cur  = -99;
     s_sb.cached_temp_dest = -99;
     strncpy(s_sb.waypoints[0], "Stop 1", sizeof(s_sb.waypoints[0])-1);
@@ -286,7 +288,12 @@ static void draw_sun(GContext *ctx, const ThemeColors *tc) {
     }
 }
 
-static void draw_battery(GContext *ctx, int w) {
+static void draw_battery(GContext *ctx, int w, const ThemeColors *tc) {
+    if (!s_sa.show_battery) {
+        graphics_context_set_fill_color(ctx, GCA(tc->horizon));
+        graphics_fill_rect(ctx, GRect(0, 0, w, 3), 0, GCornerNone);
+        return;
+    }
     GColor bc = (s_battery_level <= 20) ? C_BATT_L
               : (s_battery_level <= 40) ? C_BATT_M : C_BATT_G;
     graphics_context_set_fill_color(ctx, bc);
@@ -419,6 +426,11 @@ static void draw_flowers(GContext *ctx, const ThemeColors *tc) {
         graphics_draw_line(ctx, GPoint(fx[i], HORIZON_Y),
                                 GPoint(fx[i], HORIZON_Y - 11));
     }
+    // Dark outline ring (radius 4) before bloom so blooms read against pale horizon sky
+    graphics_context_set_fill_color(ctx, GCA(tc->landmark1));
+    for (int i = 0; i < 10; i++) {
+        graphics_fill_circle(ctx, GPoint(fx[i], HORIZON_Y - 13), 4);
+    }
     graphics_context_set_fill_color(ctx, GCA(tc->landmark2));
     for (int i = 0; i < 10; i++) {
         graphics_fill_circle(ctx, GPoint(fx[i], HORIZON_Y - 13), 3);
@@ -524,7 +536,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     bool one_day = (s_sa.day_distances[1] == 0 &&
                     s_sa.day_distances[2] == 0 &&
                     s_sa.day_distances[3] == 0 &&
-                    s_sa.day_distances[4] == 0);
+                    s_sa.day_distances[4] == 0 &&
+                    s_sa.day_distances[5] == 0);
 
     // 1. Sky gradient
     draw_sky(ctx, w, tc);
@@ -533,7 +546,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     draw_sun(ctx, tc);
 
     // 3. Battery bar (top 3px)
-    draw_battery(ctx, w);
+    draw_battery(ctx, w, tc);
 
     // 4. Road surface fill
     graphics_context_set_fill_color(ctx, GCA(tc->road));
@@ -567,7 +580,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     // 8. Progress bars
     int day_idx = (int)s_sa.trip_day - 1;
     if (day_idx < 0) day_idx = 0;
-    if (day_idx > 4) day_idx = 4;
+    if (day_idx > 5) day_idx = 5;
     int day_target = (int)s_sa.day_distances[day_idx];
     int completed = 0;
     for (int i = 0; i < day_idx; i++) completed += s_sa.day_distances[i];
@@ -588,29 +601,29 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
                       (int)s_sa.current_distance, (int)s_sa.total_distance,
                       GCA(tc->bar_ovr), GCA(tc->bar_ovr_glow), GCA(tc->bar_bg));
     } else {
-        // Overall Trip bar  (label Y=99, bar Y=119)
-        graphics_context_set_text_color(ctx, GCA(tc->txt_ovr));
-        graphics_draw_text(ctx, "Overall Trip", f18,
-            GRect(BAR_X, 99, 130, 18),
+        // Day bar  (label Y=99, bar Y=119) — primary: today's leg
+        graphics_context_set_text_color(ctx, GCA(tc->txt_day));
+        graphics_draw_text(ctx, s_day_label_buf, f18,
+            GRect(BAR_X, 99, 80, 18),
             GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
-        graphics_draw_text(ctx, s_ovr_pct_buf, f18b,
+        graphics_draw_text(ctx, s_day_pct_buf, f18b,
             GRect(w-52, 99, 50, 18),
             GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);
         draw_neon_bar(ctx, BAR_X, 119, BAR_W, BAR_H,
-                      (int)s_sa.current_distance, (int)s_sa.total_distance,
-                      GCA(tc->bar_ovr), GCA(tc->bar_ovr_glow), GCA(tc->bar_bg));
+                      day_current, day_target,
+                      GCA(tc->bar_day), GCA(tc->bar_day_glow), GCA(tc->bar_bg));
 
-        // Day bar  (label Y=133, bar Y=153)
-        graphics_context_set_text_color(ctx, GCA(tc->txt_day));
-        graphics_draw_text(ctx, s_day_label_buf, f18,
-            GRect(BAR_X, 133, 80, 18),
+        // Overall Trip bar  (label Y=133, bar Y=153) — secondary: full trip
+        graphics_context_set_text_color(ctx, GCA(tc->txt_ovr));
+        graphics_draw_text(ctx, "Overall Trip", f18,
+            GRect(BAR_X, 133, 130, 18),
             GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
-        graphics_draw_text(ctx, s_day_pct_buf, f18b,
+        graphics_draw_text(ctx, s_ovr_pct_buf, f18b,
             GRect(w-52, 133, 50, 18),
             GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);
         draw_neon_bar(ctx, BAR_X, 153, BAR_W, BAR_H,
-                      day_current, day_target,
-                      GCA(tc->bar_day), GCA(tc->bar_day_glow), GCA(tc->bar_bg));
+                      (int)s_sa.current_distance, (int)s_sa.total_distance,
+                      GCA(tc->bar_ovr), GCA(tc->bar_ovr_glow), GCA(tc->bar_bg));
     }
 
     // Y=165–187: open road visible (22px in two-bar mode, 54px in one-day mode)
@@ -622,19 +635,19 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
         graphics_draw_line(ctx, GPoint(w/2, 188), GPoint(w/2, 208));
         graphics_context_set_text_color(ctx, GCA(tc->txt_ovr));
         graphics_draw_text(ctx, s_weather_cur_buf, f18,
-            GRect(2, 189, w/2 - 3, 18),
+            GRect(2, 188, w/2 - 3, 18),
             GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
         graphics_context_set_text_color(ctx, GCA(tc->txt_day));
         graphics_draw_text(ctx, s_weather_dst_buf, f18,
-            GRect(w/2 + 2, 189, w/2 - 3, 18),
-            GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+            GRect(w/2 + 2, 188, w/2 - 4, 18),
+            GTextOverflowModeTrailingEllipsis, GTextAlignmentRight, NULL);
     }
 
-    // 10. Route bar  (Y=208 H=20, fills to Y=228; text at Y=209 gives 3px bottom buffer)
+    // 10. Route bar  (Y=208 H=20, fills to Y=228)
     draw_info_bar(ctx, 208, 20, w, GCA(tc->info2_bg), GCA(tc->info2_border));
     graphics_context_set_text_color(ctx, C_TXT_WHT);
     graphics_draw_text(ctx, s_route_buf, f18,
-        GRect(2, 209, w-4, 16),
+        GRect(2, 207, w-4, 18),
         GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 }
 
@@ -660,7 +673,7 @@ static void update_progress(void) {
     int day_n = (int)s_sa.trip_day;
     int day_i = day_n - 1;
     if (day_i < 0) day_i = 0;
-    if (day_i > 4) day_i = 4;
+    if (day_i > 5) day_i = 5;
 
     int d_tot = (int)s_sa.day_distances[day_i];
     int completed = 0;
@@ -849,6 +862,7 @@ static void inbox_received(DictionaryIterator *iterator, void *context) {
     RI32(CalcDayDist3,   s_sa.day_distances[2])
     RI32(CalcDayDist4,   s_sa.day_distances[3])
     RI32(CalcDayDist5,   s_sa.day_distances[4])
+    RI32(CalcDayDist6,   s_sa.day_distances[5])
 
     // Clay settings
     RS(TripName,         s_sa.trip_name,    24)
@@ -861,10 +875,20 @@ static void inbox_received(DictionaryIterator *iterator, void *context) {
     RS(Waypoint5,        s_sb.waypoints[4], 20)
     RI32(CurrentDistance, s_sa.current_distance)
     RI8(ProgressUnit,    s_sa.progress_unit)
-    RI8(TripDay,         s_sa.trip_day)
+    // TripDay=0 means "auto" — ignore it so GPS detection isn't overwritten by the Clay default
+    {
+        Tuple *_t = dict_find(iterator, MESSAGE_KEY_TripDay);
+        if (_t) {
+            int8_t v = (_t->type == TUPLE_CSTRING)
+                ? (int8_t)atoi(_t->value->cstring)
+                : (int8_t)_t->value->int32;
+            if (v >= 1) { s_sa.trip_day = v; changed = true; }
+        }
+    }
     RI8(Theme,           s_sa.theme)
     RB(ShowWeather,      s_sa.show_weather)
     RB(TempUnit,         s_sa.temp_unit_f)
+    RB(ShowBattery,      s_sa.show_battery)
 
 #undef RI32
 #undef RI8

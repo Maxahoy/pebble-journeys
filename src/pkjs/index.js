@@ -183,11 +183,12 @@ function sendDistances(legMeters) {
 
     var dict = {
         'CalcTotalDist': toUnit(totalMeters),
-        'CalcDayDist1':  toUnit(legMeters[0]),
-        'CalcDayDist2':  toUnit(legMeters[1]),
-        'CalcDayDist3':  toUnit(legMeters[2]),
-        'CalcDayDist4':  toUnit(legMeters[3]),
-        'CalcDayDist5':  toUnit(legMeters[4])
+        'CalcDayDist1':  toUnit(legMeters[0] || 0),
+        'CalcDayDist2':  toUnit(legMeters[1] || 0),
+        'CalcDayDist3':  toUnit(legMeters[2] || 0),
+        'CalcDayDist4':  toUnit(legMeters[3] || 0),
+        'CalcDayDist5':  toUnit(legMeters[4] || 0),
+        'CalcDayDist6':  toUnit(legMeters[5] || 0)
     };
 
     console.log('Sending distances: total=' + dict['CalcTotalDist']);
@@ -298,6 +299,15 @@ function detectTripPosition(currentLat, currentLon) {
         if (frac > 1) frac = 1;
         var totalM = legStart.cumM + frac * legLen;
 
+        // Snap to exact leg endpoint when GPS/haversine puts us within 10km of a stop.
+        // Without this, rounding at the destination yields 99% instead of 100%.
+        var SNAP_M = 10000;
+        if (dToEnd < SNAP_M && dToEnd < dFromStart) {
+            totalM = legEnd.cumM;
+        } else if (dFromStart < SNAP_M && dFromStart < dToEnd) {
+            totalM = legStart.cumM;
+        }
+
         // Convert to user's unit (miles or km; percent handled by watch)
         var unit = parseInt(localStorage.getItem('progressUnit') || '0');
         var dist = (unit === 1) ? Math.round(totalM / 1000) : Math.round(totalM / 1609.344);
@@ -384,6 +394,21 @@ var s_curDone = false, s_dstDone = false;
 var s_detectedDay = null, s_detectedDist = null;
 var s_biomeTheme = null;  // non-null when auto-theme computed a result
 
+// Returns a theme index to send only after 2 consecutive identical results,
+// preventing flicker when temperature hovers near a biome boundary.
+function stableAutoTheme(newTheme) {
+    var last  = parseInt(localStorage.getItem('autoThemeLast')  || '-1');
+    var count = parseInt(localStorage.getItem('autoThemeCount') || '0');
+    if (newTheme === last) {
+        count = Math.min(count + 1, 3);
+    } else {
+        count = 1;
+    }
+    localStorage.setItem('autoThemeLast',  '' + newTheme);
+    localStorage.setItem('autoThemeCount', '' + count);
+    return (count >= 2) ? newTheme : null;
+}
+
 function trySendWeather() {
     if (!s_curDone || !s_dstDone) return;
 
@@ -409,64 +434,91 @@ function trySendWeather() {
     );
 }
 
+// Returns the city name for tonight's overnight stop (waypoint for the current day),
+// or the final destination if no waypoint is configured for that leg.
+function getTonightDestName(day) {
+    if (day !== null && day >= 1) {
+        var wp = getStoredStr('waypoint' + day, 'Waypoint' + day);
+        if (wp && wp.trim() !== '') return wp.trim();
+    }
+    return getStoredStr('destName', 'DestName');
+}
+
+// Geocodes destName and fetches weather there; sets s_dstDone when done.
+function fetchDestWeather(destName) {
+    if (!destName) {
+        console.log('No destination name for weather');
+        s_dstTemp = null; s_dstCond = 0;
+        s_dstDone = true;
+        trySendWeather();
+        return;
+    }
+    geocodeCity(destName, function(lat, lon) {
+        if (lat !== null) {
+            fetchWeatherAt(lat, lon, function(temp, cond) {
+                s_dstTemp = temp; s_dstCond = cond;
+                s_dstDone = true;
+                trySendWeather();
+            });
+        } else {
+            console.log('Geocode failed for tonight dest: ' + destName);
+            s_dstTemp = null; s_dstCond = 0;
+            s_dstDone = true;
+            trySendWeather();
+        }
+    });
+}
+
 function fetchBothWeather() {
     s_curDone = false; s_dstDone = false;
     s_detectedDay = null; s_detectedDist = null;
     s_biomeTheme = null;
 
-    // Current location — GPS
     navigator.geolocation.getCurrentPosition(
         function(pos) {
             var lat = pos.coords.latitude, lon = pos.coords.longitude;
 
-            // Auto-detect which day of the trip and how far we've traveled
+            // Auto-detect trip position to know which day we're on
             var detection = detectTripPosition(lat, lon);
             if (detection) {
                 s_detectedDay  = detection.day;
                 s_detectedDist = detection.distance;
+                localStorage.setItem('lastTripDay', '' + detection.day);
             }
 
+            // Current location weather (concurrent with dest fetch below)
             fetchWeatherAt(lat, lon, function(temp, cond, rawCode) {
                 s_curTemp = temp; s_curCond = cond;
                 var autoTheme = localStorage.getItem('autoTheme');
                 if ((autoTheme === '1' || autoTheme === 'true') && temp !== null && rawCode >= 0) {
-                    s_biomeTheme = computeBiomeTheme(lat, lon, temp, rawCode);
-                    console.log('Auto-theme: tempC=' + temp + ' wmo=' + rawCode + ' → theme=' + s_biomeTheme);
+                    var candidate = computeBiomeTheme(lat, lon, temp, rawCode);
+                    s_biomeTheme = stableAutoTheme(candidate);
+                    console.log('Auto-theme: tempC=' + temp + ' wmo=' + rawCode +
+                                ' → candidate=' + candidate +
+                                (s_biomeTheme !== null ? ' (sending)' : ' (waiting for stability)'));
                 }
                 s_curDone = true;
                 trySendWeather();
             });
+
+            // Tonight's overnight stop weather (Day 1 end = waypoint1, Day 2 end = waypoint2, etc.)
+            var tonightDest = getTonightDestName(s_detectedDay);
+            console.log('Tonight dest: ' + tonightDest + ' (day=' + s_detectedDay + ')');
+            fetchDestWeather(tonightDest);
         },
         function(err) {
             console.log('GPS unavailable: ' + err.message);
             s_curTemp = null; s_curCond = 0;
             s_curDone = true;
-            trySendWeather();
+
+            // Use last known day (from previous successful GPS fix) or fall back to final dest
+            var lastDay = parseInt(localStorage.getItem('lastTripDay') || '0') || null;
+            var tonightDest = getTonightDestName(lastDay);
+            console.log('GPS failed — tonight dest fallback: ' + tonightDest);
+            fetchDestWeather(tonightDest);
         },
         { timeout: 15000 }
     );
-
-    // Destination weather — geocode from stored city name
-    var destName = getStoredStr('destName', 'DestName');
-    if (destName) {
-        geocodeCity(destName, function(lat, lon) {
-            if (lat !== null) {
-                fetchWeatherAt(lat, lon, function(temp, cond) {
-                    s_dstTemp = temp; s_dstCond = cond;
-                    s_dstDone = true;
-                    trySendWeather();
-                });
-            } else {
-                s_dstTemp = null; s_dstCond = 0;
-                s_dstDone = true;
-                trySendWeather();
-            }
-        });
-    } else {
-        console.log('No destination set for weather');
-        s_dstTemp = null; s_dstCond = 0;
-        s_dstDone = true;
-    }
 }
 
 // ---- Pebble Events ----

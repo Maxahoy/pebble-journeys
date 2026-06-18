@@ -51,8 +51,7 @@ module.exports = [
         "defaultValue": 0,
         "options": [
           { "label": "Miles", "value": 0 },
-          { "label": "Kilometers", "value": 1 },
-          { "label": "Percentage", "value": 2 }
+          { "label": "Kilometers", "value": 1 }
         ]
       }
     ]
@@ -61,6 +60,13 @@ module.exports = [
     "type": "section",
     "items": [
       { "type": "heading", "defaultValue": "Appearance" },
+      {
+        "type": "toggle",
+        "messageKey": "ShowBattery",
+        "label": "Show Battery Bar",
+        "description": "Shows a green/yellow/red charge bar at the top. When off, a thin themed stripe is shown instead.",
+        "defaultValue": true
+      },
       {
         "type": "toggle",
         "messageKey": "AutoTheme",
@@ -122,6 +128,14 @@ module.exports = [
         "description": "Set to 0 (or leave blank) to use GPS auto-detection",
         "defaultValue": "0",
         "attributes": { "type": "number", "min": "0" }
+      },
+      {
+        "type": "input",
+        "messageKey": "TripDay",
+        "label": "Trip Day Override",
+        "description": "Set to 0 (or leave blank) to use GPS auto-detection. 1 = Day 1, 2 = Day 2, etc.",
+        "defaultValue": "0",
+        "attributes": { "type": "number", "min": "0", "max": "6" }
       }
     ]
   },
